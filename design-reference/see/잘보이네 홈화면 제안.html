@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>잘보이네 — 홈화면 제안</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f0eee9; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="splash.jsx"></script>
+<script type="text/babel" src="launcher.jsx"></script>
+
+<script type="text/babel">
+const { IOSDevice, DesignCanvas, DCSection, DCArtboard, GridHome, PeopleHome, ListHome, VoiceHome } = window;
+
+function PhoneBoard({ children }) {
+  return (
+    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#F6EEE2,#EFE3D2)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <IOSDevice dark={false}>{children}</IOSDevice>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="home" title="잘보이네 · 홈화면 제안"
+        subtitle="어르신 런처 개선안 — 색 구분은 유지, 점토 질감으로 고급화 · 네 방향">
+        <DCArtboard id="grid" label="1 · 큰 격자 (익숙함 정제)" width={446} height={910}>
+          <PhoneBoard><GridHome /></PhoneBoard>
+        </DCArtboard>
+        <DCArtboard id="people" label="2 · 사람 먼저 (얼굴로 전화)" width={446} height={910}>
+          <PhoneBoard><PeopleHome /></PhoneBoard>
+        </DCArtboard>
+        <DCArtboard id="list" label="3 · 한 줄 리스트 (저시력 친화)" width={446} height={910}>
+          <PhoneBoard><ListHome /></PhoneBoard>
+        </DCArtboard>
+        <DCArtboard id="voice" label="4 · 음성 우선 (말로 부탁)" width={446} height={910}>
+          <PhoneBoard><VoiceHome /></PhoneBoard>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

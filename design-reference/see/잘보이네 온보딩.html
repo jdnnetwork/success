@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>잘보이네 — 온보딩 스플래시</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f0eee9; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="splash.jsx"></script>
+
+<script type="text/babel">
+const { IOSDevice, DesignCanvas, DCSection, DCArtboard, SplashA, SplashB, SplashC } = window;
+
+// 폰을 테마 배경 위에 띄워 보여주는 보드
+function PhoneBoard({ dark, bg, children }) {
+  return (
+    <div style={{
+      width: '100%', height: '100%', background: bg,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <IOSDevice dark={dark}>{children}</IOSDevice>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="onboarding" title="잘보이네 · 온보딩 스플래시"
+        subtitle="어르신용 — 장파장(코랄·주황·노랑) 따뜻한 색감 · 세 방향 비교">
+        <DCArtboard id="a" label="A · 햇살 (밝고 따뜻하게)" width={446} height={910}>
+          <PhoneBoard dark={false} bg="linear-gradient(160deg,#FCEAD2,#F6D9B6)">
+            <SplashA />
+          </PhoneBoard>
+        </DCArtboard>
+        <DCArtboard id="b" label="B · 노을 (깊고 고급스럽게)" width={446} height={910}>
+          <PhoneBoard dark={true} bg="linear-gradient(160deg,#3A1410,#23100C)">
+            <SplashB />
+          </PhoneBoard>
+        </DCArtboard>
+        <DCArtboard id="c" label="C · 단정 (가독성 최우선)" width={446} height={910}>
+          <PhoneBoard dark={false} bg="linear-gradient(160deg,#F6EEE2,#EFE3D2)">
+            <SplashC />
+          </PhoneBoard>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

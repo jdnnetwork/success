@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<title>잘보이네 — 고령층 런처 프로토타입</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="stylesheet" href="styles.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="onboarding.jsx"></script>
+<script type="text/babel" src="home.jsx"></script>
+<script type="text/babel" src="alerts.jsx"></script>
+<script type="text/babel" src="guardian.jsx"></script>
+<script type="text/babel" src="auth.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "fontScale": 0.95,
+  "highContrast": false,
+  "theme": "warm",
+  "scene": "flow"
+}/*EDITMODE-END*/;
+
+// 화면 시나리오 — 빠른 점프용
+const SCENES = [
+  { id: 'flow', label: '전체 흐름', start: 'authLanding' },
+  { id: 'onbApps', label: '온보딩 (앱 질문)', start: 'onbApps' },
+  { id: 'onbMed', label: '온보딩 (약 설정)', start: 'onbMed' },
+  { id: 'home2', label: '홈 (앱 2개)', start: 'home', overrides: { gridOverride: 2 } },
+  { id: 'home3', label: '홈 (앱 3개)', start: 'home', overrides: { gridOverride: 3 } },
+  { id: 'home4', label: '홈 (앱 4개)', start: 'home', overrides: { gridOverride: 4 } },
+  { id: 'home6', label: '홈 (앱 6개)', start: 'home', overrides: { gridOverride: 6 } },
+  { id: 'med', label: '약 알림', start: 'medAlert' },
+  { id: 'sos', label: '긴급 전화', start: 'emergency' },
+  { id: 'guardian', label: '보호자 진입', start: 'guardianGate' },
+  { id: 'guardianHome', label: '보호자 관리', start: 'guardianHome' },
+];
+
+const DEFAULT_STATE = {
+  selectedApps: { phone: true, kakao: true, video: true, weather: true },
+  medications: { count: 2, schedule: { 아침: 8, 저녁: 19 } },
+  userName: '김순자',
+  guardianName: '딸 김지영',
+  guardianPhone: '010-1234-5678',
+};
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [state, setState] = React.useState(DEFAULT_STATE);
+  const [screen, setScreenRaw] = React.useState('authLanding');
+  const [screenProps, setScreenProps] = React.useState({});
+
+  // Apply tweak overrides
+  React.useEffect(() => {
+    const scene = SCENES.find(s => s.id === t.scene) || SCENES[0];
+    setScreenRaw(scene.start);
+    if (scene.overrides) setState(s => ({ ...s, ...scene.overrides }));
+    else setState(s => ({ ...s, gridOverride: null }));
+  }, [t.scene]);
+
+  const navigate = (s, props = {}) => {
+    setScreenRaw(s);
+    setScreenProps(props);
+  };
+
+  const screens = {
+    authLanding: () => <AuthLanding navigate={navigate}/>,
+    authPhone: () => <AuthPhone {...screenProps} navigate={navigate} state={state} setState={setState}/>,
+    authConnect: () => <AuthConnect navigate={navigate} state={state} setState={setState}/>,
+    onbApps: () => <OnboardingApps state={state} setState={setState} onDone={() => navigate('onbMed')}/>,
+    onbMed: () => <OnboardingMed state={state} setState={setState} onDone={() => navigate('home')}/>,
+    home: () => <HomeScreen state={state} setState={setState} navigate={navigate}/>,
+    appOpened: () => <AppOpenedScreen app={screenProps.app} onBack={() => navigate('home')}/>,
+    medAlert: () => <MedAlertScreen state={state} navigate={navigate}/>,
+    emergency: () => <EmergencyScreen state={state} navigate={navigate}/>,
+    guardianGate: () => <GuardianGate navigate={navigate}/>,
+    guardianHome: () => <GuardianHome state={state} setState={setState} navigate={navigate}/>,
+  };
+
+  // Apply font + contrast as data attrs / inline scale
+  const fontScale = t.fontScale || 1;
+
+  // Theme background colors
+  const themes = {
+    warm: { bg1: '#F5E6D3', bg2: '#E8D5B8' },
+    cool: { bg1: '#D5E3F0', bg2: '#B8CFE5' },
+    mono: { bg1: '#DCDCDC', bg2: '#B5B5B5' },
+  };
+  const theme = themes[t.theme] || themes.warm;
+
+  return (
+    <div style={{
+      width: '100vw', height: '100vh',
+      background: `linear-gradient(135deg, ${theme.bg1}, ${theme.bg2})`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: 32, padding: 24, overflow: 'hidden', position: 'relative',
+    }}>
+      {/* 좌측: 시나리오 사이드바 */}
+      <div style={{
+        position: 'absolute', left: 16, top: 16, bottom: 16,
+        width: 200, padding: 16, borderRadius: 16,
+        background: 'rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(0,0,0,0.08)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+        overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, opacity: .5, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 8px 8px' }}>
+          잘보이네 · 화면 보기
+        </div>
+        {SCENES.map(s => (
+          <button key={s.id} onClick={() => setTweak('scene', s.id)} style={{
+            padding: '10px 12px', borderRadius: 10, border: 'none',
+            background: t.scene === s.id ? '#1A1A1A' : 'transparent',
+            color: t.scene === s.id ? '#fff' : '#1A1A1A',
+            cursor: 'pointer', textAlign: 'left',
+            fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+            transition: 'background .12s',
+          }}>
+            {s.label}
+          </button>
+        ))}
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', marginTop: 8, paddingTop: 12 }}>
+          <div style={{ fontSize: 11, opacity: .5, padding: '0 8px', lineHeight: 1.5 }}>
+            전체 흐름에서는 로그인 → 온보딩 → 홈을 모두 따라가볼 수 있어요.
+            <br/><br/>
+            홈에서 좌측 상단 시간 영역을 1.5초 길게 누르면 보호자 모드로 진입.
+          </div>
+        </div>
+      </div>
+
+      {/* 폰 프레임 */}
+      <div style={{
+        marginLeft: 100,
+        width: 380, height: 800,
+        borderRadius: 48, overflow: 'hidden',
+        background: '#000', padding: 8,
+        boxShadow: '0 30px 80px rgba(0,0,0,0.35), 0 8px 24px rgba(0,0,0,0.2)',
+        position: 'relative',
+        fontSize: `${fontScale}em`,
+      }} data-contrast={t.highContrast ? 'high' : 'normal'}>
+        <div style={{
+          width: '100%', height: '100%', borderRadius: 40, overflow: 'hidden',
+          background: '#FAF7F0', display: 'flex', flexDirection: 'column',
+          position: 'relative',
+        }}>
+          {/* notch */}
+          <div style={{
+            position: 'absolute', top: 8, left: '50%',
+            transform: 'translateX(-50%)', width: 90, height: 22,
+            borderRadius: 20, background: '#000', zIndex: 10,
+          }}/>
+          <StatusBar dark={screen === 'medAlert' || screen === 'emergency' && screenProps.calling || screen === 'guardianGate'}/>
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <div key={screen} className="fade-up" style={{ height: '100%' }}>
+              {screens[screen] ? screens[screen]() : <div>404</div>}
+            </div>
+          </div>
+          <GestureBar dark={screen === 'medAlert' || screen === 'guardianGate'}/>
+        </div>
+      </div>
+
+      <TweaksPanel title="잘보이네 Tweaks">
+        <TweakSection label="화면 선택"/>
+        <TweakSelect label="화면" value={t.scene}
+          options={SCENES.map(s => ({ value: s.id, label: s.label }))}
+          onChange={(v) => setTweak('scene', v)}/>
+        <TweakSection label="접근성"/>
+        <TweakSlider label="글자 크기" value={t.fontScale}
+          min={0.85} max={1.3} step={0.05} unit="x"
+          onChange={(v) => setTweak('fontScale', v)}/>
+        <TweakToggle label="고대비 모드" value={t.highContrast}
+          onChange={(v) => setTweak('highContrast', v)}/>
+        <TweakSection label="배경 테마"/>
+        <TweakRadio label="배경" value={t.theme}
+          options={[{value:'warm',label:'따뜻'},{value:'cool',label:'시원'},{value:'mono',label:'무채'}]}
+          onChange={(v) => setTweak('theme', v)}/>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>잘보이네 — 스플래시</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(120% 100% at 50% 0%, #F6EEE2 0%, #EFE3D2 100%);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-family: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+  #phone { transform-origin: center center; }
+  @keyframes nudge { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(3px);} }
+  @media (prefers-reduced-motion: reduce){ .nudge{ animation:none !important; } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="phone"><div id="root"></div></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+
+<script type="text/babel">
+const { IOSDevice } = window;
+const FONT = "'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+const INK = '#3A2410', MUTE = '#7A5A40', ACCENT = '#C2531E';
+const labelShadow = '0 2px 3px rgba(0,0,0,0.22)';
+
+function clay(c1, c2, sh, r) {
+  return {
+    background: `linear-gradient(160deg, ${c1} 0%, ${c2} 100%)`, borderRadius: r,
+    boxShadow: `inset 0 3px 4px rgba(255,255,255,0.45), inset 0 -7px 12px rgba(0,0,0,0.16), 0 12px 20px ${sh}`,
+  };
+}
+const TILES = [
+  { c1: '#6FB36A', c2: '#4E9457', sh: 'rgba(60,120,60,0.4)', icon: 'phone',  label: '전화' },
+  { c1: '#5E96D6', c2: '#4374B8', sh: 'rgba(50,95,165,0.4)', icon: 'chat',   label: '문자' },
+  { c1: '#A074C8', c2: '#7E55B0', sh: 'rgba(110,70,160,0.4)', icon: 'camera', label: '사진' },
+  { c1: '#E07AAC', c2: '#C85E94', sh: 'rgba(180,75,130,0.4)', icon: 'photo',  label: '그림' },
+];
+const Ic = {
+  phone: (s) => <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1l-2.1 2.2z"/></svg>,
+  chat: (s) => <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-1-1.7V6a2 2 0 0 1 2-2z"/></svg>,
+  camera: (s) => <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff"><path d="M9 4h6l1.4 2H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.6L9 4z"/><circle cx="12" cy="13" r="3.6" fill="#7E55B0"/><circle cx="12" cy="13" r="1.5" fill="#fff"/></svg>,
+  photo: (s) => <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10" r="1.8" fill="#C85E94"/><path d="M6 17l4-4 3 3 3-3 3 3v1H6z" fill="#C85E94"/></svg>,
+  people: (s) => <svg width={s} height={s} viewBox="0 0 24 24" fill={ACCENT}><circle cx="8.5" cy="8" r="3.2"/><circle cx="16" cy="9" r="2.6"/><path d="M2.5 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5z"/><path d="M15 13.6c2.7.1 4.5 2 4.5 4.4v1H16.5v-1c0-1.7-.6-3.2-1.5-4.4z"/></svg>,
+};
+
+function Splash() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, fontFamily: FONT, color: INK, WebkitFontSmoothing: 'antialiased',
+      background: 'linear-gradient(180deg,#FDF7EE 0%,#F6EBDA 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+      padding: '84px 30px 44px', boxSizing: 'border-box',
+    }}>
+      <div style={{ flexGrow: 0.55 }} />
+
+      {/* 헤드라인 — 위계 적용 */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 27, fontWeight: 700, color: MUTE, letterSpacing: -0.3, marginBottom: 5 }}>어르신을 위한</div>
+        <div style={{ fontSize: 50, fontWeight: 900, color: INK, letterSpacing: -1.6, lineHeight: 1.08 }}>쉬운 스마트폰</div>
+      </div>
+
+      <div style={{ flexGrow: 1.1 }} />
+
+      {/* 앱 미리보기 — 본문 폭에 맞춰 정렬 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {TILES.map((t, i) => (
+          <div key={i} style={{ ...clay(t.c1, t.c2, t.sh, 26), height: 122, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+            {Ic[t.icon](46)}
+            <span style={{ fontSize: 21, fontWeight: 700, color: '#fff', letterSpacing: -0.4, textShadow: labelShadow }}>{t.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ flexGrow: 1 }} />
+
+      {/* 큰 시작 박스 */}
+      <button style={{
+        width: '100%', minHeight: 110, border: 'none', borderRadius: 28, cursor: 'pointer', padding: '16px',
+        ...clay('#F2742E', '#E0481C', 'rgba(224,72,28,0.42)', 28), fontFamily: FONT,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+      }}>
+        <span className="nudge" style={{ fontSize: 17, fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: -0.2, animation: 'nudge 1.9s ease-in-out infinite' }}>여기를 누르세요</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 34, fontWeight: 900, color: '#fff', letterSpacing: -0.5, textShadow: labelShadow }}>
+          시작하기
+          <svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+
+      {/* 보호자 박스 (구분) */}
+      <button style={{
+        width: '100%', marginTop: 14, border: '1.5px solid rgba(120,80,40,0.16)', borderRadius: 22, cursor: 'pointer',
+        background: '#FFFDF9', boxShadow: '0 6px 16px rgba(120,80,40,0.08)', fontFamily: FONT,
+        display: 'flex', alignItems: 'center', gap: 13, padding: '15px 16px',
+      }}>
+        <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'rgba(232,98,58,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {Ic.people(25)}
+        </span>
+        <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 600, lineHeight: 1.45, color: MUTE }}>
+          가족 및 어르신을 도와주시는<br />보호자는 여기를 눌러주세요
+        </span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A98C" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+
+      <div style={{ flexGrow: 0.5 }} />
+    </div>
+  );
+}
+
+function App() { return <IOSDevice dark={false}><Splash /></IOSDevice>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+const PHONE_W = 402, PHONE_H = 874;
+function fit() {
+  const s = Math.min((window.innerWidth - 40) / PHONE_W, (window.innerHeight - 40) / PHONE_H, 1.25);
+  document.getElementById('phone').style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

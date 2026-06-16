@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>잘보이네 — 스플래시</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(120% 100% at 50% 0%, #F3EADB 0%, #E7D8C2 100%);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+  }
+  #phone { transform-origin: center center; }
+  @keyframes sunrise { 0%,100%{ transform: scale(1); opacity:.95;} 50%{ transform: scale(1.04); opacity:1;} }
+  @keyframes hint { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(3px);} }
+  @media (prefers-reduced-motion: reduce){ .sun-glow,.hint-arrow{ animation:none !important; } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="phone"><div id="root"></div></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+
+<script type="text/babel">
+const { IOSDevice } = window;
+const FONT = "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif";
+const INK = '#3A2008';
+const MUTE = '#8A6A4E';
+const ACCENT = '#C2531E';
+
+function Splash() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, fontFamily: FONT, color: INK, WebkitFontSmoothing: 'antialiased',
+      background: 'linear-gradient(180deg,#FFF4E2 0%,#FFE6C2 40%,#FBD09C 72%,#F6B878 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: '96px 32px 48px', boxSizing: 'border-box', overflow: 'hidden',
+    }}>
+      {/* 떠오르는 해 (장식) */}
+      <div className="sun-glow" style={{
+        position: 'absolute', top: 150, left: 'calc(50% - 200px)', width: 400, height: 400, borderRadius: '50%',
+        background: 'radial-gradient(circle at 50% 50%, #FFF6DA 0%, #FFE7A4 30%, rgba(255,214,130,0) 68%)',
+        animation: 'sunrise 6.5s ease-in-out infinite', zIndex: 0, pointerEvents: 'none',
+      }} />
+      <div style={{ position: 'absolute', top: 188, left: 'calc(50% - 162px)', width: 324, height: 324,
+        borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.4)', zIndex: 0, pointerEvents: 'none' }} />
+
+      {/* 워드마크 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, zIndex: 2 }}>
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: ACCENT, boxShadow: `0 0 0 4px rgba(194,83,30,0.18)` }} />
+        <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: 2, color: ACCENT, whiteSpace: 'nowrap' }}>잘보이네</span>
+      </div>
+
+      {/* 헤드라인 블록 */}
+      <div style={{ marginTop: 132, textAlign: 'center', zIndex: 2 }}>
+        <h1 style={{ margin: 0, fontSize: 36, fontWeight: 800, lineHeight: 1.34, letterSpacing: -0.4, color: INK }}>
+          오늘부터,<br />쉬운 스마트폰
+        </h1>
+        <p style={{ margin: '18px 0 0', fontSize: 18, fontWeight: 500, lineHeight: 1.6, color: '#7A5028', whiteSpace: 'nowrap' }}>
+          크게 보고, 쉽게 누르세요
+        </p>
+      </div>
+
+      {/* 아래 영역 */}
+      <div style={{ marginTop: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+        <div className="hint-arrow" style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 16.5, fontWeight: 600, color: ACCENT, marginBottom: 16, whiteSpace: 'nowrap', animation: 'hint 1.9s ease-in-out infinite' }}>
+          여기를 눌러 시작하세요
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+        </div>
+
+        <button style={{
+          width: '100%', height: 82, border: 'none', borderRadius: 24, cursor: 'pointer',
+          background: 'linear-gradient(160deg,#F2742E 0%,#E0481C 100%)', color: '#fff', fontFamily: FONT,
+          fontSize: 27, fontWeight: 800, letterSpacing: 0.5, whiteSpace: 'nowrap',
+          boxShadow: '0 16px 30px rgba(224,72,28,0.4), inset 0 1px 0 rgba(255,255,255,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+        }}>
+          시작하기
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT, marginTop: 24, padding: 4,
+          fontSize: 16, fontWeight: 600, lineHeight: 1.6, color: MUTE, textAlign: 'center',
+          textDecorationLine: 'underline', textUnderlineOffset: 4, textDecorationColor: 'rgba(138,106,78,0.4)' }}>
+          가족 및 도와주시는 분은<br />여기를 눌러주세요
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() { return <IOSDevice dark={false}><Splash /></IOSDevice>; }
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+const PHONE_W = 402, PHONE_H = 874;
+function fit() {
+  const s = Math.min((window.innerWidth - 40) / PHONE_W, (window.innerHeight - 40) / PHONE_H, 1.25);
+  document.getElementById('phone').style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+/* 잘보이네 — 고령층 친화 디자인 시스템 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+:root {
+  /* 고대비 메인 팔레트 — 진한 색, 명확한 대비 */
+  --c-bg: #FFFFFF;
+  --c-bg-soft: #F5F2EA;
+  --c-ink: #1A1A1A;
+  --c-ink-soft: #4A4A4A;
+  --c-line: #E0DDD3;
+
+  /* 신호색 — 짙고 또렷하게 */
+  --c-primary: #0B5FD9;        /* 진한 파랑 (확인/긍정) */
+  --c-primary-ink: #FFFFFF;
+  --c-primary-soft: #E6EFFB;
+
+  --c-accent: #E8B500;         /* 따뜻한 골든 (강조/주의) */
+  --c-success: #1B8A3A;
+  --c-warn: #D97706;
+  --c-danger: #C8102E;         /* 진한 빨강 (긴급) */
+  --c-danger-soft: #FFE4E4;
+
+  /* 약/캘린더 */
+  --c-pill: #7C3AED;
+
+  /* 글자 크기 (베이스) — 기본 22px, 사용자 조절 가능 */
+  --fs-xxl: 56px;   /* 최대 헤드라인 */
+  --fs-xl: 40px;    /* 화면 메인 질문 */
+  --fs-l: 32px;     /* 큰 버튼 */
+  --fs-m: 26px;     /* 본문/라벨 */
+  --fs-s: 20px;     /* 보조 */
+  --fs-xs: 16px;    /* 메타 */
+
+  --r-card: 22px;
+  --r-btn: 20px;
+  --r-pill: 999px;
+}
+
+/* 고대비 모드 */
+[data-contrast="high"] {
+  --c-bg: #FFFFFF;
+  --c-ink: #000000;
+  --c-line: #000000;
+  --c-primary: #003BB3;
+  --c-danger: #B00020;
+  --c-bg-soft: #FFFFFF;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: #1f1d22;
+  color: var(--c-ink);
+}
+
+button { font-family: inherit; }
+
+/* 큰 버튼 베이스 */
+.bigbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 96px;
+  border-radius: var(--r-btn);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: var(--fs-l);
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: -0.01em;
+}
+.bigbtn:active { transform: scale(0.98); }
+
+.bigbtn--primary {
+  background: var(--c-primary);
+  color: #fff;
+  box-shadow: 0 6px 0 #083f8f;
+}
+.bigbtn--primary:active { box-shadow: 0 2px 0 #083f8f; transform: translateY(4px); }
+
+.bigbtn--ghost {
+  background: #fff;
+  color: var(--c-ink);
+  border-color: var(--c-ink);
+  box-shadow: 0 6px 0 var(--c-ink);
+}
+.bigbtn--ghost:active { box-shadow: 0 2px 0 var(--c-ink); transform: translateY(4px); }
+
+.bigbtn--danger {
+  background: var(--c-danger);
+  color: #fff;
+  box-shadow: 0 6px 0 #7e0a1d;
+}
+.bigbtn--danger:active { box-shadow: 0 2px 0 #7e0a1d; transform: translateY(4px); }
+
+.bigbtn--accent {
+  background: var(--c-accent);
+  color: #1A1A1A;
+  box-shadow: 0 6px 0 #a37e00;
+}
+
+/* 스크롤바 숨김 (런처는 네이티브 느낌이 중요) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* 화면 전환 페이드 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp .25s ease-out both; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.pulse { animation: pulse 1.6s ease-in-out infinite; }
+
+@keyframes ringWave {
+  0% { transform: scale(0.9); opacity: .8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.ring-wave {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 4px solid currentColor;
+  animation: ringWave 1.8s ease-out infinite;
+}
