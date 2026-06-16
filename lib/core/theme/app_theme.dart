@@ -8,13 +8,14 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get senior {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seniorPrimary,
-      brightness: Brightness.light,
-    ).copyWith(
-      surface: AppColors.seniorSurface,
-      onSurface: AppColors.seniorOnSurface,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.seniorPrimary,
+          brightness: Brightness.light,
+        ).copyWith(
+          surface: AppColors.seniorSurface,
+          onSurface: AppColors.seniorOnSurface,
+        );
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
@@ -30,13 +31,14 @@ class AppTheme {
   }
 
   static ThemeData get guardian {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.guardianPrimary,
-      brightness: Brightness.light,
-    ).copyWith(
-      surface: AppColors.guardianSurface,
-      onSurface: AppColors.guardianOnSurface,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.guardianPrimary,
+          brightness: Brightness.light,
+        ).copyWith(
+          surface: AppColors.guardianSurface,
+          onSurface: AppColors.guardianOnSurface,
+        );
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,

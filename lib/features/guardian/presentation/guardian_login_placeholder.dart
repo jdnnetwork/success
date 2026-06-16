@@ -6,8 +6,6 @@ class GuardianLoginPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('보호자 로그인 (Phase 1)')),
-    );
+    return const Scaffold(body: Center(child: Text('보호자 로그인 (Phase 1)')));
   }
 }

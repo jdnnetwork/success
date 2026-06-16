@@ -11,11 +11,19 @@ class AppColors {
   // ── Senior — clay / cream (from design-reference) ──
   // Body background is a radial gradient #F6EEE2 → #EFE3D2.
   static const seniorBackground = Color(0xFFF6EEE2); // gradient top (cream)
-  static const seniorBackgroundEnd = Color(0xFFEFE3D2); // gradient bottom (clay)
-  static const seniorSurface = Color(0xFFFFFDF9); // card surface (near-white cream)
+  static const seniorBackgroundEnd = Color(
+    0xFFEFE3D2,
+  ); // gradient bottom (clay)
+  static const seniorSurface = Color(
+    0xFFFFFDF9,
+  ); // card surface (near-white cream)
   static const seniorPrimary = Color(0xFFC2531E); // terracotta brand accent
-  static const seniorOnSurface = Color(0xFF3A2410); // primary text (dark clay brown)
-  static const seniorTextSecondary = Color(0xFF7A5A40); // secondary text (muted brown)
+  static const seniorOnSurface = Color(
+    0xFF3A2410,
+  ); // primary text (dark clay brown)
+  static const seniorTextSecondary = Color(
+    0xFF7A5A40,
+  ); // secondary text (muted brown)
   static const seniorBorder = Color(0xFFC9A98C); // clay tan border / divider
 
   // Senior launcher button category colors (light → dark gradient pairs),

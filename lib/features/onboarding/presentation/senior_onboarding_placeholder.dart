@@ -6,8 +6,6 @@ class SeniorOnboardingPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('피보호자 온보딩 (Phase 1)')),
-    );
+    return const Scaffold(body: Center(child: Text('피보호자 온보딩 (Phase 1)')));
   }
 }
