@@ -9,24 +9,29 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    final settings =
-        await container.read(seniorSettingsControllerProvider.future);
+    final settings = await container.read(
+      seniorSettingsControllerProvider.future,
+    );
     expect(settings.screenMode, isNull);
   });
 
-  test('chooseScreenMode persists to the repository and updates state',
-      () async {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    await container.read(seniorSettingsControllerProvider.future);
+  test(
+    'chooseScreenMode persists to the repository and updates state',
+    () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      await container.read(seniorSettingsControllerProvider.future);
 
-    await container
-        .read(seniorSettingsControllerProvider.notifier)
-        .chooseScreenMode(ScreenMode.easy);
+      await container
+          .read(seniorSettingsControllerProvider.notifier)
+          .chooseScreenMode(ScreenMode.easy);
 
-    expect(container.read(seniorSettingsControllerProvider).value!.screenMode,
-        ScreenMode.easy);
-    final repo = container.read(seniorSettingsRepositoryProvider);
-    expect((await repo.load()).screenMode, ScreenMode.easy);
-  });
+      expect(
+        container.read(seniorSettingsControllerProvider).value!.screenMode,
+        ScreenMode.easy,
+      );
+      final repo = container.read(seniorSettingsRepositoryProvider);
+      expect((await repo.load()).screenMode, ScreenMode.easy);
+    },
+  );
 }

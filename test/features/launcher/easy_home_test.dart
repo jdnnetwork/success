@@ -12,8 +12,9 @@ Future<void> _gotoEasyHome(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('easy home shows the 4 default tiles, SOS, 가족 연결, 더 보기',
-      (tester) async {
+  testWidgets('easy home shows the 4 default tiles, SOS, 가족 연결, 더 보기', (
+    tester,
+  ) async {
     await _gotoEasyHome(tester);
 
     expect(find.byType(AppTile), findsNWidgets(4));

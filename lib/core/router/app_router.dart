@@ -36,10 +36,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.detailedHome,
         builder: (context, state) => const DetailedHomeScreen(),
       ),
-      GoRoute(
-        path: Routes.sos,
-        builder: (context, state) => const SosScreen(),
-      ),
+      GoRoute(path: Routes.sos, builder: (context, state) => const SosScreen()),
       GoRoute(
         path: Routes.familyLink,
         builder: (context, state) => const FamilyLinkPlaceholder(),

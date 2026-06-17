@@ -10,8 +10,7 @@ import '../data/phone_dialer.dart';
 class SosScreen extends ConsumerWidget {
   const SosScreen({super.key});
 
-  Future<void> _dial(
-      BuildContext context, WidgetRef ref, String number) async {
+  Future<void> _dial(BuildContext context, WidgetRef ref, String number) async {
     await ref.read(phoneDialerProvider).openDialer(number);
   }
 
@@ -75,14 +74,19 @@ class _SosTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text(caption,
-                  style: const TextStyle(fontSize: 18, color: Colors.white)),
+              Text(
+                caption,
+                style: const TextStyle(fontSize: 18, color: Colors.white),
+              ),
             ],
           ),
         ),

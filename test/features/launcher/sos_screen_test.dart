@@ -11,13 +11,16 @@ class FakePhoneDialer implements PhoneDialer {
 }
 
 void main() {
-  testWidgets('SOS shows 119/112/보호자 and dials 119 without auto-calling',
-      (tester) async {
+  testWidgets('SOS shows 119/112/보호자 and dials 119 without auto-calling', (
+    tester,
+  ) async {
     final dialer = FakePhoneDialer();
-    await tester.pumpWidget(ProviderScope(
-      overrides: [phoneDialerProvider.overrideWithValue(dialer)],
-      child: const MaterialApp(home: SosScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [phoneDialerProvider.overrideWithValue(dialer)],
+        child: const MaterialApp(home: SosScreen()),
+      ),
+    );
 
     expect(find.text('119'), findsOneWidget);
     expect(find.text('112'), findsOneWidget);

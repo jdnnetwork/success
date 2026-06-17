@@ -9,8 +9,10 @@ class MoreAppsPlaceholder extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('더 보기')),
       body: const Center(
-        child: Text('더 많은 앱을 곧 추가할 수 있어요',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+        child: Text(
+          '더 많은 앱을 곧 추가할 수 있어요',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

@@ -12,7 +12,10 @@ class ScreenModeChoiceScreen extends ConsumerWidget {
   const ScreenModeChoiceScreen({super.key});
 
   Future<void> _choose(
-      BuildContext context, WidgetRef ref, ScreenMode mode) async {
+    BuildContext context,
+    WidgetRef ref,
+    ScreenMode mode,
+  ) async {
     await ref
         .read(seniorSettingsControllerProvider.notifier)
         .chooseScreenMode(mode);
@@ -30,9 +33,11 @@ class ScreenModeChoiceScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 12),
-              Text('화면을 골라주세요',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                  textAlign: TextAlign.center),
+              Text(
+                '화면을 골라주세요',
+                style: Theme.of(context).textTheme.headlineLarge,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               Expanded(
                 child: _ModeCard(
@@ -59,8 +64,11 @@ class ScreenModeChoiceScreen extends ConsumerWidget {
 }
 
 class _ModeCard extends StatelessWidget {
-  const _ModeCard(
-      {required this.title, required this.subtitle, required this.onTap});
+  const _ModeCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   final String title;
   final String subtitle;
@@ -80,15 +88,22 @@ class _ModeCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.seniorOnSurface)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.seniorOnSurface,
+                ),
+              ),
               const SizedBox(height: 10),
-              Text(subtitle,
-                  style: const TextStyle(
-                      fontSize: 20, color: AppColors.seniorTextSecondary)),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: AppColors.seniorTextSecondary,
+                ),
+              ),
             ],
           ),
         ),

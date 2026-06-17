@@ -9,8 +9,10 @@ class FamilyLinkPlaceholder extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('가족 연결')),
       body: const Center(
-        child: Text('가족 연결은 곧 준비됩니다',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+        child: Text(
+          '가족 연결은 곧 준비됩니다',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

@@ -21,5 +21,5 @@ class SeniorSettingsController extends AsyncNotifier<SeniorSettings> {
 
 final seniorSettingsControllerProvider =
     AsyncNotifierProvider<SeniorSettingsController, SeniorSettings>(
-  SeniorSettingsController.new,
-);
+      SeniorSettingsController.new,
+    );

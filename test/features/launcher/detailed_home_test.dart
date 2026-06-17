@@ -11,8 +11,9 @@ Future<void> _gotoDetailedHome(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('detailed home shows 6 tiles, 2 add-slots, and bottom tabs',
-      (tester) async {
+  testWidgets('detailed home shows 6 tiles, 2 add-slots, and bottom tabs', (
+    tester,
+  ) async {
     await _gotoDetailedHome(tester);
 
     expect(find.byType(AppTile), findsNWidgets(6));

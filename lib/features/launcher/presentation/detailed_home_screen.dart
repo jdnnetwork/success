@@ -21,9 +21,7 @@ class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
   void _openApp(LauncherApp app) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')),
-      );
+      ..showSnackBar(SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')));
   }
 
   void _onTab(int i) {
@@ -53,7 +51,9 @@ class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
           NavigationDestination(icon: Icon(Icons.home), label: '첫 화면'),
           NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
           NavigationDestination(
-              icon: Icon(Icons.sos, color: AppColors.seniorSos), label: 'SOS'),
+            icon: Icon(Icons.sos, color: AppColors.seniorSos),
+            label: 'SOS',
+          ),
         ],
       ),
     );
@@ -102,11 +102,14 @@ class _AddSlot extends StatelessWidget {
         children: [
           Icon(Icons.add, size: 44, color: AppColors.seniorTextSecondary),
           SizedBox(height: 6),
-          Text('추가하기',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.seniorTextSecondary)),
+          Text(
+            '추가하기',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.seniorTextSecondary,
+            ),
+          ),
         ],
       ),
     );
@@ -133,11 +136,14 @@ class _SettingsPanel extends StatelessWidget {
           Card(
             color: AppColors.seniorSurface,
             child: ListTile(
-              title: Text(label,
-                  style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.seniorOnSurface)),
+              title: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.seniorOnSurface,
+                ),
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {},
             ),

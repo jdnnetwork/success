@@ -14,9 +14,7 @@ class EasyHomeScreen extends StatelessWidget {
   void _openApp(BuildContext context, LauncherApp app) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')),
-      );
+      ..showSnackBar(SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')));
   }
 
   @override
@@ -108,8 +106,11 @@ class EasyHomeScreen extends StatelessWidget {
 }
 
 class _PillButton extends StatelessWidget {
-  const _PillButton(
-      {required this.label, required this.icon, required this.onTap});
+  const _PillButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -130,11 +131,14 @@ class _PillButton extends StatelessWidget {
             children: [
               Icon(icon, size: 30, color: AppColors.seniorPrimary),
               const SizedBox(height: 6),
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.seniorOnSurface)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.seniorOnSurface,
+                ),
+              ),
             ],
           ),
         ),

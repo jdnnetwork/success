@@ -2,8 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/pump_app.dart';
 
 void main() {
-  testWidgets('choice screen shows two preview cards, no other questions',
-      (tester) async {
+  testWidgets('choice screen shows two preview cards, no other questions', (
+    tester,
+  ) async {
     await pumpApp(tester);
     await tester.tap(find.text('시작하기'));
     await tester.pumpAndSettle();
@@ -12,8 +13,7 @@ void main() {
     expect(find.text('자세한 화면'), findsOneWidget);
   });
 
-  testWidgets('choosing 정말 쉬운 화면 navigates to the easy home',
-      (tester) async {
+  testWidgets('choosing 정말 쉬운 화면 navigates to the easy home', (tester) async {
     await pumpApp(tester);
     await tester.tap(find.text('시작하기'));
     await tester.pumpAndSettle();

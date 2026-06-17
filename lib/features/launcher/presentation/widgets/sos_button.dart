@@ -35,7 +35,11 @@ class SosButton extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_active, color: Colors.white, size: 28),
+                  Icon(
+                    Icons.notifications_active,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   SizedBox(width: 12),
                   Text(
                     '긴급 구조 요청',
