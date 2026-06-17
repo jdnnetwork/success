@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/guardian/presentation/guardian_login_placeholder.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
 import '../../features/launcher/presentation/easy_home_screen.dart';
+import '../../features/launcher/presentation/sos_screen.dart';
 import '../../features/onboarding/presentation/role_split_screen.dart';
 import '../../features/onboarding/presentation/screen_mode_choice_screen.dart';
 import 'routes.dart';
@@ -36,8 +37,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.sos,
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('SOS'))),
+        builder: (context, state) => const SosScreen(),
       ),
       GoRoute(
         path: Routes.familyLink,
