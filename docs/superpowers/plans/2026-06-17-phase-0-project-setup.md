@@ -93,38 +93,48 @@ import 'package:flutter/material.dart';
 
 /// Color tokens for the two app personas.
 ///
-/// Senior (피보호자) values are extracted directly from the clay/cream design
-/// references in `design-reference/` (잘보이네 스플래시 / 홈화면 standalone HTML).
-/// Guardian (보호자) palette is white with a blue accent.
+/// Values are extracted verbatim from the canonical design sources in
+/// `design-reference/see/`:
+///   - Senior (피보호자): `launcher.jsx` (PAGE_BG / INK / APPS tiles / SOS)
+///     and `splash.jsx` (SplashC terracotta CTA).
+///   - Guardian (보호자): `styles.css` `:root` high-contrast token set.
 class AppColors {
   AppColors._();
 
-  // ── Senior — clay / cream (from design-reference) ──
-  // Body background is a radial gradient #F6EEE2 → #EFE3D2.
-  static const seniorBackground = Color(0xFFF6EEE2); // gradient top (cream)
-  static const seniorBackgroundEnd = Color(0xFFEFE3D2); // gradient bottom (clay)
-  static const seniorSurface = Color(0xFFFFFDF9); // card surface (near-white cream)
-  static const seniorPrimary = Color(0xFFC2531E); // terracotta brand accent
-  static const seniorOnSurface = Color(0xFF3A2410); // primary text (dark clay brown)
-  static const seniorTextSecondary = Color(0xFF7A5A40); // secondary text (muted brown)
-  static const seniorBorder = Color(0xFFC9A98C); // clay tan border / divider
+  // ── Senior — warm cream / clay (launcher.jsx, splash.jsx) ──
+  // PAGE_BG = linear-gradient(180deg, #FDF7EE 0%, #F6EBDA 100%)
+  static const seniorBackground = Color(0xFFFDF7EE); // gradient top (cream)
+  static const seniorBackgroundEnd = Color(0xFFF6EBDA); // gradient bottom (soft clay)
+  static const seniorSurface = Color(0xFFFFFFFF); // card / list-row surface
+  static const seniorPrimary = Color(0xFFE0481C); // terracotta CTA (SplashC btn / voice)
+  static const seniorOnSurface = Color(0xFF3A2410); // INK — primary text
+  static const seniorTextSecondary = Color(0xFF7A5A40); // INK_SOFT — secondary text
+  static const seniorBorder = Color(0xFFC9A98C); // muted clay (chevron / divider)
+  static const seniorSos = Color(0xFFD62116); // SOS gradient base (긴급 구조)
 
-  // Senior launcher button category colors (light → dark gradient pairs),
-  // used by the home grid in Phase 1.
-  static const seniorButtonGreen = Color(0xFF4E9457);
+  // Senior launcher app-tile categories (c1 light → c2 base), from APPS in
+  // launcher.jsx. Used by the home grid in Phase 1.
+  static const seniorButtonGreen = Color(0xFF4E9457); // 전화
   static const seniorButtonGreenLight = Color(0xFF6FB36A);
-  static const seniorButtonBlue = Color(0xFF4374B8);
+  static const seniorButtonBlue = Color(0xFF4374B8); // 메시지
   static const seniorButtonBlueLight = Color(0xFF5E96D6);
-  static const seniorButtonPurple = Color(0xFF7E55B0);
+  static const seniorButtonYellow = Color(0xFFF2A93B); // 카카오톡
+  static const seniorButtonYellowLight = Color(0xFFFFCE5C);
+  static const seniorButtonRed = Color(0xFFD8431C); // 유튜브
+  static const seniorButtonRedLight = Color(0xFFF2683E);
+  static const seniorButtonPurple = Color(0xFF7E55B0); // 카메라
   static const seniorButtonPurpleLight = Color(0xFFA074C8);
-  static const seniorButtonPink = Color(0xFFC85E94);
+  static const seniorButtonPink = Color(0xFFC85E94); // 갤러리
   static const seniorButtonPinkLight = Color(0xFFE07AAC);
 
-  // ── Guardian — clean white with blue accent ──
-  static const guardianPrimary = Color(0xFF2563EB); // blue
-  static const guardianBackground = Color(0xFFFFFFFF);
-  static const guardianSurface = Color(0xFFF7F8FA);
-  static const guardianOnSurface = Color(0xFF1A1A1A);
+  // ── Guardian — high-contrast white / blue (styles.css :root) ──
+  static const guardianPrimary = Color(0xFF0B5FD9); // --c-primary (deep blue)
+  static const guardianBackground = Color(0xFFFFFFFF); // --c-bg
+  static const guardianSurface = Color(0xFFF5F2EA); // --c-bg-soft (warm off-white)
+  static const guardianOnSurface = Color(0xFF1A1A1A); // --c-ink
+  static const guardianBorder = Color(0xFFE0DDD3); // --c-line
+  static const guardianAccent = Color(0xFFE8B500); // --c-accent (golden)
+  static const guardianDanger = Color(0xFFC8102E); // --c-danger
 }
 ```
 
