@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/guardian/presentation/guardian_login_placeholder.dart';
+import '../../features/launcher/presentation/easy_home_screen.dart';
 import '../../features/onboarding/presentation/role_split_screen.dart';
 import '../../features/onboarding/presentation/screen_mode_choice_screen.dart';
 import 'routes.dart';
@@ -26,8 +27,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.easyHome,
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('앨범'))),
+        builder: (context, state) => const EasyHomeScreen(),
       ),
       GoRoute(
         path: Routes.detailedHome,
