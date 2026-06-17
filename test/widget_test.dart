@@ -20,6 +20,6 @@ void main() {
     await tester.tap(find.text('시작하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('피보호자 온보딩 (Phase 1)'), findsOneWidget);
+    expect(find.text('화면을 골라주세요'), findsOneWidget);
   });
 }
