@@ -20,6 +20,9 @@ class ScreenModeChoiceScreen extends ConsumerWidget {
         .read(seniorSettingsControllerProvider.notifier)
         .chooseScreenMode(mode);
     if (!context.mounted) return;
+    // Phase 1 routes from the tapped card. Phase 2 (shared_preferences) should
+    // add a router redirect that reads the saved screenMode so a returning
+    // senior lands directly on their home instead of the splash.
     context.go(mode == ScreenMode.easy ? Routes.easyHome : Routes.detailedHome);
   }
 

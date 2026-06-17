@@ -13,9 +13,8 @@ void main() {
   test('openDialer records the number, exposes no auto-call path', () async {
     final dialer = FakePhoneDialer();
     await dialer.openDialer('119');
-    expect(dialer.opened, ['119']);
-    // PhoneDialer has exactly one method; there is no place callers could
-    // trigger a call without user confirmation in the OS dialer.
-    expect(PhoneDialer, isNotNull);
+    await dialer.openDialer('112');
+    // Each call only records an "open"; the interface has no call path at all.
+    expect(dialer.opened, ['119', '112']);
   });
 }

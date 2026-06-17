@@ -10,7 +10,7 @@ import '../data/phone_dialer.dart';
 class SosScreen extends ConsumerWidget {
   const SosScreen({super.key});
 
-  Future<void> _dial(BuildContext context, WidgetRef ref, String number) async {
+  Future<void> _dial(WidgetRef ref, String number) async {
     await ref.read(phoneDialerProvider).openDialer(number);
   }
 
@@ -27,7 +27,7 @@ class SosScreen extends ConsumerWidget {
                 child: _SosTile(
                   label: '119',
                   caption: '불 · 구급',
-                  onTap: () => _dial(context, ref, '119'),
+                  onTap: () => _dial(ref, '119'),
                 ),
               ),
               const SizedBox(height: 16),
@@ -35,7 +35,7 @@ class SosScreen extends ConsumerWidget {
                 child: _SosTile(
                   label: '112',
                   caption: '경찰',
-                  onTap: () => _dial(context, ref, '112'),
+                  onTap: () => _dial(ref, '112'),
                 ),
               ),
               const SizedBox(height: 16),
