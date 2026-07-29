@@ -224,8 +224,70 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
   final Map<String, SeniorDevice> activeDeviceByProfile = {};
   final List<String> linkedProfileIds = [];
 
+  /// profile id -> guardian account id -> role. Phase 5 gave a profile more
+  /// than one guardian, so a flat list of ids no longer says enough.
+  final Map<String, Map<String, String>> rolesByProfile = {};
+
+  /// Who [resolvePrimaryGuardian] is waiting on, per profile.
+  final Map<String, String> pendingPrimaryByProfile = {};
+
+  /// The install this fake treats as the senior's own phone, so the twin can
+  /// enforce "only the senior device may answer" the way the database does.
+  String? seniorInstallId;
+
   GuardianAccount? _account;
   int _seq = 0;
+
+  /// The guardian account id, creating it on demand the way the RPC does.
+  String get guardianAccountId => (_account ??= GuardianAccount(
+    id: 'account-1',
+    authUserId: guardianAuthUserId,
+  )).id;
+
+  /// Registers a profile as belonging to [role], used by the pairing twin.
+  void link(String profileId, String guardianId, String role) {
+    (rolesByProfile[profileId] ??= {})[guardianId] = role;
+    if (guardianId == guardianAccountId && !linkedProfileIds.contains(profileId)) {
+      linkedProfileIds.add(profileId);
+    }
+  }
+
+  /// Adds a profile the way the pairing functions do, without a guardian.
+  SeniorProfile addProfile(String displayName) {
+    _seq++;
+    final profile = SeniorProfile(
+      id: 'profile-$_seq',
+      displayName: displayName,
+      customerCode: 'CODE${_seq.toString().padLeft(4, '0')}',
+    );
+    profiles[profile.id] = profile;
+    return profile;
+  }
+
+  void rename(String profileId, String displayName) {
+    final profile = profiles[profileId];
+    if (profile == null) return;
+    profiles[profileId] = SeniorProfile(
+      id: profile.id,
+      displayName: displayName,
+      customerCode: profile.customerCode,
+      ageBand: profile.ageBand,
+      screenMode: profile.screenMode,
+      fontSize: profile.fontSize,
+      paidConsentStatus: profile.paidConsentStatus,
+    );
+  }
+
+  /// Retires whichever install held the profile and makes this one live.
+  void attachDevice(String profileId, String installId, {String? platform}) {
+    activeDeviceByProfile[profileId] = SeniorDevice(
+      id: 'device-${activeDeviceByProfile.length + 1}',
+      installId: installId,
+      isActive: true,
+      platform: platform,
+    );
+    seniorInstallId = installId;
+  }
 
   @override
   Future<GuardianAccount> ensureGuardianAccount({
@@ -257,7 +319,7 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
       ageBand: ageBand,
     );
     profiles[profile.id] = profile;
-    linkedProfileIds.add(profile.id);
+    link(profile.id, guardianAccountId, 'primary');
     return profile;
   }
 
@@ -280,13 +342,7 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
       throw const SeniorLinkException('연결 번호가 맞지 않아요. 다시 확인해 주세요.');
     }
     final profile = match.first;
-    activeDeviceByProfile[profile.id] = SeniorDevice(
-      id: 'device-${activeDeviceByProfile.length + 1}',
-      installId: installId,
-      isActive: true,
-      deviceLabel: deviceLabel,
-      platform: platform,
-    );
+    attachDevice(profile.id, installId, platform: platform);
     return profile;
   }
 

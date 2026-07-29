@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../data/remote/guardian_auth_repository.dart';
 import '../../data/remote/home_apps_repository.dart';
+import '../../data/remote/pairing_repository.dart';
 import '../../data/remote/senior_link_repository.dart';
 import 'supabase_config.dart';
 
@@ -40,6 +41,17 @@ final seniorLinkRepositoryProvider = Provider<SeniorLinkRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   if (client == null) return InMemorySeniorLinkRepository();
   return SupabaseSeniorLinkRepository(client);
+});
+
+/// The pairing twin shares the link repository's state, so a code redeemed in
+/// a build with no project still shows up as a linked parent everywhere else.
+final pairingRepositoryProvider = Provider<PairingRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  if (client == null) {
+    final links = ref.watch(seniorLinkRepositoryProvider);
+    return InMemoryPairingRepository(links as InMemorySeniorLinkRepository);
+  }
+  return SupabasePairingRepository(client);
 });
 
 final homeAppsRepositoryProvider = Provider<HomeAppsRepository>((ref) {
