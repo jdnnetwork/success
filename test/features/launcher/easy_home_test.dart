@@ -4,9 +4,7 @@ import 'package:app/features/launcher/presentation/widgets/sos_button.dart';
 import '../../support/pump_app.dart';
 
 Future<void> _gotoEasyHome(WidgetTester tester) async {
-  await pumpApp(tester);
-  await tester.tap(find.text('시작하기'));
-  await tester.pumpAndSettle();
+  await enterSeniorFlow(tester);
   await tester.tap(find.text('정말 쉬운 화면'));
   await tester.pumpAndSettle();
 }

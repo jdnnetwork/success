@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Korean font used only to render review screenshots; fetched by the
+# SessionStart hook so it does not live in the repository.
+/test/fonts/

@@ -5,18 +5,14 @@ void main() {
   testWidgets('choice screen shows two preview cards, no other questions', (
     tester,
   ) async {
-    await pumpApp(tester);
-    await tester.tap(find.text('시작하기'));
-    await tester.pumpAndSettle();
+    await enterSeniorFlow(tester);
 
     expect(find.text('정말 쉬운 화면'), findsOneWidget);
     expect(find.text('자세한 화면'), findsOneWidget);
   });
 
   testWidgets('choosing 정말 쉬운 화면 navigates to the easy home', (tester) async {
-    await pumpApp(tester);
-    await tester.tap(find.text('시작하기'));
-    await tester.pumpAndSettle();
+    await enterSeniorFlow(tester);
 
     await tester.tap(find.text('정말 쉬운 화면'));
     await tester.pumpAndSettle();

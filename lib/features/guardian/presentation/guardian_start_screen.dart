@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/router/routes.dart';
+import '../../../core/theme/app_colors.dart';
+
+/// Widget keys the tests drive.
+class GuardianStartKeys {
+  GuardianStartKeys._();
+
+  static const back = Key('guardian-start-back');
+  static const kakao = Key('guardian-start-kakao');
+  static const google = Key('guardian-start-google');
+}
+
+/// Guardian entry. Argues for connecting before asking for an account.
+///
+/// Sign-up and sign-in are one action: with Kakao or Google the first tap
+/// creates the account and later taps sign in, so a separate 회원가입 control
+/// would ask a question the user cannot answer correctly.
+class GuardianStartScreen extends StatelessWidget {
+  const GuardianStartScreen({super.key});
+
+  static const _benefits = <(String, String, String)>[
+    (
+      '1',
+      '부모님을 대신해 필요한 앱을 관리해 드릴 수 있어요',
+      '홈 화면 앱과 버튼 색을 원격으로 정리합니다',
+    ),
+    (
+      '2',
+      '부모님과 쉽게 메시지와 사진을 주고받을 수 있어요',
+      '큰 글씨로 바로 보이는 가족 메시지',
+    ),
+    ('3', '부모님의 폰 상태를 확인할 수 있어요', '배터리 · 소리 · 인터넷 연결을 한눈에'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.guardianStartBgTop,
+              AppColors.guardianStartBgMid,
+              AppColors.guardianStartBgBottom,
+            ],
+            stops: [0.0, 0.52, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: IconButton(
+                  key: GuardianStartKeys.back,
+                  onPressed: () => context.go(Routes.firstScreen),
+                  icon: const Icon(Icons.chevron_left),
+                  iconSize: 26,
+                  color: const Color(0xFF6B6459),
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(26, 0, 26, 34),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _Header(),
+                      const SizedBox(height: 30),
+                      for (var i = 0; i < _benefits.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 10),
+                        _BenefitCard(
+                          number: _benefits[i].$1,
+                          title: _benefits[i].$2,
+                          subtitle: _benefits[i].$3,
+                          order: i,
+                        ),
+                      ],
+                      const SizedBox(height: 30),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppColors.guardianStartLine,
+                      ),
+                      const SizedBox(height: 18),
+                      // Kakao first: effectively every guardian in this age
+                      // range has one, and Google more often stalls on
+                      // "which account was mine".
+                      _ProviderButton(
+                        buttonKey: GuardianStartKeys.kakao,
+                        label: '카카오로 시작하기',
+                        background: AppColors.kakaoYellow,
+                        foreground: AppColors.kakaoInk,
+                        icon: Icons.chat_bubble,
+                      ),
+                      const SizedBox(height: 10),
+                      _ProviderButton(
+                        buttonKey: GuardianStartKeys.google,
+                        label: '구글로 시작하기',
+                        background: Colors.white,
+                        foreground: AppColors.guardianStartInk,
+                        icon: Icons.g_mobiledata,
+                        borderColor: AppColors.guardianStartLine,
+                      ),
+                      const SizedBox(height: 22),
+                      const Text(
+                        '시작하면 서비스 이용약관과\n개인정보 처리방침에 동의하게 됩니다',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          height: 1.7,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.guardianStartFaint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 5,
+              height: 5,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.guardianStartAccent,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              '보호자 시작하기',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 2.2,
+                color: AppColors.guardianStartMuted,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          '부모님께 이런 걸\n해드릴 수 있어요',
+          style: TextStyle(
+            fontSize: 29,
+            height: 1.42,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -1.4,
+            color: AppColors.guardianStartInk,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          '연결은 몇 분이면 끝납니다.',
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.3,
+            color: AppColors.guardianStartSub,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One benefit, fading up from below so the eye is walked from 1 to 3.
+class _BenefitCard extends StatefulWidget {
+  const _BenefitCard({
+    required this.number,
+    required this.title,
+    required this.subtitle,
+    required this.order,
+  });
+
+  final String number;
+  final String title;
+  final String subtitle;
+  final int order;
+
+  @override
+  State<_BenefitCard> createState() => _BenefitCardState();
+}
+
+class _BenefitCardState extends State<_BenefitCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 550),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(
+      Duration(milliseconds: 50 + widget.order * 70),
+      () {
+        if (mounted) _controller.forward();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(17, 18, 18, 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.guardianStartCardBorder),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.guardianStartBadgeFill,
+                  border: Border.all(
+                    color: AppColors.guardianStartBadgeBorder,
+                  ),
+                ),
+                child: Text(
+                  widget.number,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.guardianStartAccent,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                        color: AppColors.guardianStartInk,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      widget.subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
+                        color: AppColors.guardianStartMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProviderButton extends StatelessWidget {
+  const _ProviderButton({
+    required this.buttonKey,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.icon,
+    this.borderColor,
+  });
+
+  final Key buttonKey;
+  final String label;
+  final Color background;
+  final Color foreground;
+  final IconData icon;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      width: double.infinity,
+      child: FilledButton(
+        key: buttonKey,
+        style: FilledButton.styleFrom(
+          backgroundColor: background,
+          foregroundColor: foreground,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: borderColor == null
+                ? BorderSide.none
+                : BorderSide(color: borderColor!, width: 1.4),
+          ),
+        ),
+        // Auth arrives with Supabase in Phase 4; until then both providers
+        // land on the existing login placeholder.
+        onPressed: () => context.go(Routes.guardianLogin),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: foreground),
+            const SizedBox(width: 9),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
+                color: foreground,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

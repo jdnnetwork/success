@@ -3,9 +3,7 @@ import 'package:app/features/launcher/presentation/widgets/app_tile.dart';
 import '../../support/pump_app.dart';
 
 Future<void> _gotoDetailedHome(WidgetTester tester) async {
-  await pumpApp(tester);
-  await tester.tap(find.text('시작하기'));
-  await tester.pumpAndSettle();
+  await enterSeniorFlow(tester);
   await tester.tap(find.text('자세한 화면'));
   await tester.pumpAndSettle();
 }
