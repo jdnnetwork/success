@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/family/presentation/family_link_placeholder.dart';
 import '../../features/guardian/presentation/guardian_login_placeholder.dart';
+import '../../features/guardian/presentation/guardian_dashboard_screen.dart';
 import '../../features/guardian/presentation/guardian_start_screen.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
 import '../../features/launcher/presentation/easy_home_screen.dart';
@@ -37,6 +38,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.guardianLogin,
         builder: (context, state) => const GuardianLoginPlaceholder(),
+      ),
+      GoRoute(
+        path: Routes.guardianDashboard,
+        builder: (context, state) => const GuardianDashboardScreen(),
       ),
       GoRoute(
         path: Routes.easyHome,

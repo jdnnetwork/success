@@ -58,11 +58,18 @@ early.
 
 The project (`jal 26.07`, ref `jnmvhdmxzonngqyicelx`, ap-southeast-1,
 PostgreSQL 17) exists and is healthy. `SUPABASE_ACCESS_TOKEN` in the
-environment is **not a working token** — it holds the masked `sbp_xxxx••••`
-string copied off the dashboard, so every Management API call returns 401
-"JWT could not be decoded". Only the repo owner can fix that, in the
-environment variable settings. Don't spend time debugging it as a network or
-permissions problem.
+environment is **not a working token**. It holds
+`sbp_cc48` + 32 `•` characters + `d352` — the dashboard's masked display,
+selected and copied as text — so every Management API call returns 401
+"JWT could not be decoded". This is not a network or permissions problem;
+don't debug it as one.
+
+Supabase only shows a token in full at creation, so the original value is
+unrecoverable and a new token has to be issued. Copying it needs the
+dashboard's copy button: dragging over the text selects the mask again,
+which is how the current value got there. Only the repo owner can replace
+it, in the environment variable settings, and the change takes effect in the
+next session rather than the current one.
 
 ## Conventions
 

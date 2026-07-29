@@ -112,4 +112,25 @@ void main() {
     expect(find.text('화면을 골라주세요'), findsOneWidget);
     await _capture(tester, '04-screen-mode-choice');
   });
+
+  testWidgets('the guardian dashboard renders every tab', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.byKey(SplashScreen.guardianCardKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('카카오로 시작하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('어머니 김순자'), findsOneWidget);
+    await _capture(tester, '05-dashboard-home');
+
+    for (final (tab, name) in [
+      ('홈 화면', '06-dashboard-launcher'),
+      ('돌봄', '07-dashboard-care'),
+      ('가족', '08-dashboard-family'),
+    ]) {
+      await tester.tap(find.text(tab));
+      await tester.pumpAndSettle();
+      await _capture(tester, name);
+    }
+  });
 }

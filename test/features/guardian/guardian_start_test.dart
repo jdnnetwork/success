@@ -69,15 +69,15 @@ void main() {
     );
   });
 
-  testWidgets('both providers lead to the guardian login screen', (
-    tester,
-  ) async {
+  testWidgets('both providers open the dashboard', (tester) async {
     await _gotoGuardianStart(tester);
 
     await tester.tap(find.text('카카오로 시작하기'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('보호자 로그인'), findsOneWidget);
+    // Auth is Phase 4; Phase 3 only requires the dashboard be reachable
+    // without a backend.
+    expect(find.text('어머니 김순자'), findsOneWidget);
   });
 
   testWidgets('back returns to the splash', (tester) async {

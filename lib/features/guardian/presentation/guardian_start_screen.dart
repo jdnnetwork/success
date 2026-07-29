@@ -341,8 +341,9 @@ class _ProviderButton extends StatelessWidget {
           ),
         ),
         // Auth arrives with Supabase in Phase 4; until then both providers
-        // land on the existing login placeholder.
-        onPressed: () => context.go(Routes.guardianLogin),
+        // open the dashboard directly, so it can be navigated without a
+        // backend the way Phase 3 requires.
+        onPressed: () => context.go(Routes.guardianDashboard),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

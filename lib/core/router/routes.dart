@@ -6,6 +6,7 @@ class Routes {
   static const seniorOnboarding = '/onboarding';
   static const guardianStart = '/guardian-start';
   static const guardianLogin = '/guardian-login';
+  static const guardianDashboard = '/guardian';
 
   // Senior launcher (Phase 1)
   static const easyHome = '/home/easy';
