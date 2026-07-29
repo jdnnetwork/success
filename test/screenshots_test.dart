@@ -133,7 +133,7 @@ void main() {
     await tester.tap(find.text('카카오로 시작하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('어머니 김순자'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
     await _capture(tester, '05-dashboard-home');
 
     for (final (tab, name) in [

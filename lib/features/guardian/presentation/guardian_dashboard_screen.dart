@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../domain/app_category.dart';
-import '../../../domain/launcher_app.dart';
-import '../../launcher/application/senior_settings_controller.dart';
+import '../../../domain/senior_profile.dart';
+import '../../../domain/senior_settings.dart';
+import '../application/guardian_home_apps_controller.dart';
+import '../application/guardian_session_controller.dart';
 import 'add_senior_card.dart';
+import 'guardian_launcher_tab.dart';
 
 /// 보호자 대시보드. Navigable without a backend — everything shown here is
 /// either local settings or mock data until Phase 4 wires Supabase.
@@ -43,7 +45,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
           index: _index,
           children: const [
             _HomeTab(),
-            _LauncherTab(),
+            GuardianLauncherTab(),
             _CareTab(),
             _FamilyTab(),
           ],
@@ -96,7 +98,7 @@ class _TabScaffold extends StatelessWidget {
 }
 
 class _Card extends StatelessWidget {
-  const _Card({required this.child});
+  const _Card({super.key, required this.child});
 
   final Widget child;
 
@@ -115,62 +117,80 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// 홈 — the parent's phone at a glance, plus the actions used most often.
-class _HomeTab extends StatelessWidget {
+/// 홈 — the parent's phone at a glance.
+///
+/// Only what the server actually knows. Battery, ringer volume and network
+/// were mocked here through Phase 3; they arrive with the 5-minute background
+/// sync in Phase 6, and a plausible-looking 배터리 72% on a dashboard whose
+/// whole job is to reassure would be worse than an empty state that says so.
+class _HomeTab extends ConsumerWidget {
   const _HomeTab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profiles = ref.watch(linkedSeniorProfilesProvider);
+    final profile = ref.watch(selectedSeniorProfileProvider);
+
+    if (profiles.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (profile == null) {
+      return _TabScaffold(
+        title: '부모님 연결하기',
+        children: const [
+          _Card(
+            key: GuardianHomeKeys.noParent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '아직 연결된 부모님이 없어요',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '가족 탭에서 부모님을 추가하면 연결 번호가 나옵니다. '
+                  '그 번호를 부모님 폰의 가족 연결 화면에 넣으면 연결돼요.',
+                  style: TextStyle(fontSize: 15, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return _TabScaffold(
-      title: '어머니 김순자',
+      title: profile.displayName,
       children: [
+        if ((profiles.value?.length ?? 0) > 1)
+          _Card(child: _ParentSwitcher(profiles: profiles.value!)),
+        const _Card(child: _DeviceStatus()),
         _Card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.guardianPrimary,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '연결됨',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    '방금 전까지 사용 중',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF6B6459)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              const Wrap(
-                spacing: 18,
-                runSpacing: 8,
-                children: [
-                  Text('배터리 72%', style: TextStyle(fontSize: 16)),
-                  Text('벨소리 · 70%', style: TextStyle(fontSize: 16)),
-                  Text('인터넷 연결됨', style: TextStyle(fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Naming the refresh rule prevents a stale reading from being
-              // mistaken for a current one.
               const Text(
-                '앱을 열 때 1회 갱신됩니다',
-                style: TextStyle(fontSize: 13, color: Color(0xFF6B6459)),
+                '부모님이 고른 설정',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 10),
+              _Setting(
+                label: '화면',
+                value: switch (profile.screenMode) {
+                  ScreenMode.easy => '정말 쉬운 화면',
+                  ScreenMode.detailed => '자세한 화면',
+                  null => '아직 고르지 않으셨어요',
+                },
+              ),
+              _Setting(
+                label: '글씨 크기',
+                value: switch (profile.fontSize) {
+                  FontSize.normal => '보통',
+                  FontSize.large => '크게',
+                  FontSize.extraLarge => '아주 크게',
+                  null => '아직 고르지 않으셨어요',
+                },
               ),
             ],
           ),
@@ -180,14 +200,15 @@ class _HomeTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '빠른 조작',
+                '배터리 · 소리 · 인터넷',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
-              SizedBox(height: 10),
-              _QuickAction(label: '글씨 크게', detail: '현재 아주 크게'),
-              _QuickAction(label: '소리 설정', detail: '벨소리 · 70%'),
-              _QuickAction(label: '메시지 보내기', detail: '이번 달 32회 남음'),
-              _QuickAction(label: '바로 전화', detail: '어머니에게 걸기'),
+              SizedBox(height: 8),
+              Text(
+                '부모님 폰 상태는 안심 케어에서 5분마다 확인해 알려 드릴 예정이에요. '
+                '아직 준비 중입니다.',
+                style: TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF6B6459)),
+              ),
             ],
           ),
         ),
@@ -196,80 +217,145 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({required this.label, required this.detail});
+/// Widget keys the tests drive.
+class GuardianHomeKeys {
+  GuardianHomeKeys._();
 
-  final String label;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label, style: const TextStyle(fontSize: 16)),
-      subtitle: Text(detail, style: const TextStyle(fontSize: 13)),
-      trailing: const Icon(Icons.chevron_right),
-    );
-  }
+  static const noParent = Key('guardian-home-no-parent');
+  static const connected = Key('guardian-home-connected');
+  static const notConnected = Key('guardian-home-not-connected');
+  static const switcher = Key('guardian-home-switcher');
 }
 
-/// 홈 화면 — the docs' 홈 관리 탭: the buttons on the parent's launcher.
-class _LauncherTab extends ConsumerWidget {
-  const _LauncherTab();
+/// Whether the parent's phone has ever connected, and which one it is now.
+class _DeviceStatus extends ConsumerWidget {
+  const _DeviceStatus();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final saved = ref.watch(seniorSettingsControllerProvider).value?.apps;
-    final apps = (saved == null || saved.isEmpty) ? defaultEasyApps : saved;
+    final device = ref.watch(selectedSeniorDeviceProvider);
 
-    return _TabScaffold(
-      title: '홈 화면 구성',
-      children: [
-        const _Card(
-          child: Text(
-            '바꾸면 어머니 폰에 바로 반영됩니다. 홈 화면 앱과 버튼 색을 원격으로 정리합니다.',
+    return switch (device) {
+      AsyncData(value: final it?) => Column(
+        key: GuardianHomeKeys.connected,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.guardianPrimary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '연결됨',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                it.deviceLabel ?? it.platform ?? '부모님 폰',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF6B6459)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            '홈 화면 탭에서 버튼을 정리해 드릴 수 있어요.',
             style: TextStyle(fontSize: 15, height: 1.5),
           ),
-        ),
-        for (final app in apps)
-          _Card(
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: app.baseColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(app.category.icon, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    app.label,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.drag_handle, color: Color(0xFF9C8770)),
-              ],
-            ),
+        ],
+      ),
+      AsyncData() => const Column(
+        key: GuardianHomeKeys.notConnected,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '부모님 폰이 아직 연결되지 않았어요',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
-        const _Card(
-          child: Text(
-            '버튼 색상은 눈에 잘 띄는 난색 팔레트만 제공합니다.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B6459)),
+          SizedBox(height: 8),
+          // The arrangement is kept and applied the moment the phone connects,
+          // so there is no reason to make them wait before tidying it.
+          Text(
+            '가족 탭의 연결 번호를 부모님께 알려 주세요. '
+            '미리 홈 화면을 정리해 두시면 연결되는 순간 그대로 적용됩니다.',
+            style: TextStyle(fontSize: 15, height: 1.5),
           ),
+        ],
+      ),
+      AsyncError() => const Text(
+        '부모님 폰 상태를 읽지 못했어요.',
+        style: TextStyle(fontSize: 15),
+      ),
+      _ => const Center(child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: CircularProgressIndicator(),
+      )),
+    };
+  }
+}
+
+class _ParentSwitcher extends ConsumerWidget {
+  const _ParentSwitcher({required this.profiles});
+
+  final List<SeniorProfile> profiles;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(selectedSeniorProfileProvider);
+    return Row(
+      key: GuardianHomeKeys.switcher,
+      children: [
+        const Text('부모님', style: TextStyle(fontSize: 15)),
+        const Spacer(),
+        DropdownButton<String>(
+          value: selected?.id,
+          underline: const SizedBox.shrink(),
+          items: [
+            for (final profile in profiles)
+              DropdownMenuItem(value: profile.id, child: Text(profile.displayName)),
+          ],
+          onChanged: (id) {
+            if (id != null) {
+              ref.read(selectedSeniorProfileIdProvider.notifier).select(id);
+            }
+          },
         ),
       ],
     );
   }
 }
 
-/// 돌봄 — the docs' 안심 탭. Paid features and what they cost.
+class _Setting extends StatelessWidget {
+  const _Setting({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CareTab extends StatelessWidget {
   const _CareTab();
 

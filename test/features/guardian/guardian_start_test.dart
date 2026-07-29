@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/features/guardian/presentation/guardian_start_screen.dart';
@@ -69,15 +70,19 @@ void main() {
     );
   });
 
-  testWidgets('both providers open the dashboard', (tester) async {
+  testWidgets('both providers open the dashboard on a build with no project', (
+    tester,
+  ) async {
     await _gotoGuardianStart(tester);
 
     await tester.tap(find.text('카카오로 시작하기'));
     await tester.pumpAndSettle();
 
-    // Auth is Phase 4; Phase 3 only requires the dashboard be reachable
+    // With a Supabase project attached these buttons explain that the provider
+    // is being prepared and offer the email route. With none attached the old
+    // Phase 3 behaviour stands, which is what keeps the dashboard reachable
     // without a backend.
-    expect(find.text('어머니 김순자'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
   });
 
   testWidgets('back returns to the splash', (tester) async {

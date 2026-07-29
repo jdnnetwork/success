@@ -1,12 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/features/guardian/presentation/guardian_dashboard_screen.dart';
+import 'package:app/features/guardian/presentation/guardian_launcher_tab.dart';
 import 'package:app/features/onboarding/presentation/splash_screen.dart';
 
 import '../../support/pump_app.dart';
 
-/// Reaches the dashboard the way a guardian does: splash → guardian start →
-/// a provider button. Auth lands in Phase 4; until then the button is the door.
+/// Reaches the dashboard the way a guardian does on a build with no Supabase
+/// project: splash → guardian start → a provider button, which is what keeps
+/// Phase 3's "navigable without a backend" true.
+///
+/// With no project the repositories resolve to their in-memory twins, so no
+/// parent is linked — that empty state is what these cases see. The cases that
+/// need a linked parent live in guardian_launcher_tab_test.dart.
 Future<void> _gotoDashboard(WidgetTester tester) async {
   await pumpApp(tester);
   await tester.tap(find.byKey(SplashScreen.guardianCardKey));
@@ -29,27 +35,33 @@ void main() {
     expect(find.byType(GuardianDashboardScreen), findsOneWidget);
   });
 
-  testWidgets('the dashboard opens on the parent status card', (tester) async {
+  testWidgets('a guardian with no parent yet is told how to get one', (
+    tester,
+  ) async {
     await _gotoDashboard(tester);
 
-    expect(find.text('어머니 김순자'), findsOneWidget);
-    expect(find.text('연결됨'), findsOneWidget);
-    expect(find.textContaining('배터리'), findsWidgets);
+    expect(find.byKey(GuardianHomeKeys.noParent), findsOneWidget);
+    expect(find.text('아직 연결된 부모님이 없어요'), findsOneWidget);
   });
 
-  testWidgets('phone status says when it was last read', (tester) async {
+  testWidgets('no phone reading is shown that the server does not have', (
+    tester,
+  ) async {
     await _gotoDashboard(tester);
 
-    // The free tier refreshes once per app open. Saying so up front is the
-    // difference between a stale reading and a wrong one.
-    expect(find.textContaining('앱을 열 때'), findsOneWidget);
+    // Battery, ringer and network were mocked through Phase 3 and arrive with
+    // the Phase 6 background sync. On a dashboard whose whole job is to
+    // reassure, a plausible-looking 배터리 72% is worse than saying nothing.
+    expect(find.textContaining('배터리 72'), findsNothing);
+    expect(find.textContaining('벨소리 · 70'), findsNothing);
+    expect(find.text('연결됨'), findsNothing);
   });
 
   testWidgets('all four tabs are reachable without a backend', (tester) async {
     await _gotoDashboard(tester);
 
     await _openTab(tester, '홈 화면');
-    expect(find.text('홈 화면 구성'), findsOneWidget);
+    expect(find.byKey(GuardianLauncherKeys.empty), findsOneWidget);
 
     await _openTab(tester, '돌봄');
     expect(find.text('안심 케어'), findsWidgets);
@@ -58,7 +70,7 @@ void main() {
     expect(find.text('가족 연결 코드'), findsOneWidget);
 
     await _openTab(tester, '홈');
-    expect(find.text('어머니 김순자'), findsOneWidget);
+    expect(find.byKey(GuardianHomeKeys.noParent), findsOneWidget);
   });
 
   testWidgets('the care tab drops what the PRD puts outside the MVP', (
@@ -105,13 +117,16 @@ void main() {
     expect(find.textContaining('어머니 폰에서'), findsOneWidget);
   });
 
-  testWidgets('the home-management tab lists the senior buttons', (
+  testWidgets('the home tab does not offer editing a parent who is not there', (
     tester,
   ) async {
+    // Through Phase 3 this tab drew the guardian's own local buttons and
+    // claimed they reached the parent's phone. With nobody linked there is
+    // nothing to edit, and saying so beats showing someone else's home screen.
     await _gotoDashboard(tester);
     await _openTab(tester, '홈 화면');
 
-    expect(find.text('전화'), findsWidgets);
-    expect(find.textContaining('원격'), findsWidgets);
+    expect(find.byKey(GuardianLauncherKeys.empty), findsOneWidget);
+    expect(find.byKey(GuardianLauncherKeys.add), findsNothing);
   });
 }

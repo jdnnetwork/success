@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../domain/guardian_account.dart';
+import '../../domain/senior_device.dart';
 import '../../domain/senior_profile.dart';
 import '../../domain/senior_settings.dart';
 
@@ -46,6 +47,12 @@ abstract interface class SeniorLinkRepository {
   });
 
   Future<SeniorProfile> fetchProfile(String seniorProfileId);
+
+  /// The phone currently carrying this profile, or null when none has
+  /// connected yet. Only the active one: a retired install is history, and
+  /// showing it would tell the guardian their parent is set up when they are
+  /// holding a different phone.
+  Future<SeniorDevice?> activeDevice(String seniorProfileId);
 
   /// Pushes the two settings that live on the profile rather than in
   /// `home_apps`, so the guardian's dashboard can show what the parent chose.
@@ -148,6 +155,21 @@ class SupabaseSeniorLinkRepository implements SeniorLinkRepository {
   }
 
   @override
+  Future<SeniorDevice?> activeDevice(String seniorProfileId) async {
+    try {
+      final row = await _client
+          .from('senior_devices')
+          .select()
+          .eq('senior_profile_id', seniorProfileId)
+          .eq('is_active', true)
+          .maybeSingle();
+      return row == null ? null : SeniorDevice.fromRow(row);
+    } on sb.PostgrestException catch (e) {
+      throw SeniorLinkException(e.message);
+    }
+  }
+
+  @override
   Future<void> updateProfileSettings(
     String seniorProfileId, {
     ScreenMode? screenMode,
@@ -199,7 +221,7 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
   final String guardianAuthUserId;
 
   final Map<String, SeniorProfile> profiles = {};
-  final Map<String, String> activeInstallByProfile = {};
+  final Map<String, SeniorDevice> activeDeviceByProfile = {};
   final List<String> linkedProfileIds = [];
 
   GuardianAccount? _account;
@@ -258,7 +280,13 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
       throw const SeniorLinkException('연결 번호가 맞지 않아요. 다시 확인해 주세요.');
     }
     final profile = match.first;
-    activeInstallByProfile[profile.id] = installId;
+    activeDeviceByProfile[profile.id] = SeniorDevice(
+      id: 'device-${activeDeviceByProfile.length + 1}',
+      installId: installId,
+      isActive: true,
+      deviceLabel: deviceLabel,
+      platform: platform,
+    );
     return profile;
   }
 
@@ -270,6 +298,10 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
     }
     return profile;
   }
+
+  @override
+  Future<SeniorDevice?> activeDevice(String seniorProfileId) async =>
+      activeDeviceByProfile[seniorProfileId];
 
   @override
   Future<void> updateProfileSettings(

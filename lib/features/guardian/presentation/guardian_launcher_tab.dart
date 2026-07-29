@@ -1,0 +1,420 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../domain/app_category.dart';
+import '../../../domain/launcher_app.dart';
+import '../application/guardian_home_apps_controller.dart';
+
+/// Widget keys the tests drive.
+class GuardianLauncherKeys {
+  GuardianLauncherKeys._();
+
+  static const empty = Key('guardian-launcher-empty');
+  static const list = Key('guardian-launcher-list');
+  static const add = Key('guardian-launcher-add');
+
+  static Key rename(String id) => Key('guardian-launcher-rename-$id');
+  static Key colour(String id) => Key('guardian-launcher-colour-$id');
+  static Key delete(String id) => Key('guardian-launcher-delete-$id');
+}
+
+/// 홈 화면 — the buttons on the parent's launcher, edited from here.
+///
+/// This is the feature the guardian half exists for. Until Phase 4 it drew the
+/// guardian's own local settings, which meant the card's promise that a change
+/// reaches the parent's phone was not true. It now reads and writes the
+/// parent's `home_apps` rows.
+class GuardianLauncherTab extends ConsumerWidget {
+  const GuardianLauncherTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(selectedSeniorProfileProvider);
+    final apps = ref.watch(guardianHomeAppsProvider);
+
+    if (profile == null) {
+      return const _Message(
+        key: GuardianLauncherKeys.empty,
+        title: '아직 연결된 부모님이 없어요',
+        detail: '가족 탭에서 부모님을 추가하고 연결 번호를 알려 드리면,\n'
+            '여기에서 홈 화면을 정리해 드릴 수 있어요.',
+      );
+    }
+
+    return switch (apps) {
+      AsyncError(:final error) => _Message(
+        title: '홈 화면을 불러오지 못했어요',
+        detail: '$error',
+        onRetry: () => ref.invalidate(guardianHomeAppsProvider),
+      ),
+      AsyncData(:final value) => _Editor(profile: profile.displayName, apps: value),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
+  }
+}
+
+class _Editor extends ConsumerWidget {
+  const _Editor({required this.profile, required this.apps});
+
+  final String profile;
+  final List<LauncherApp> apps;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          child: Text(
+            '$profile 홈 화면',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Text(
+            '바꾸면 부모님 폰에 반영됩니다. 부모님 폰이 꺼져 있으면 다음에 켤 때 적용돼요.',
+            style: TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF6B6459)),
+          ),
+        ),
+        if (apps.isEmpty)
+          const Expanded(
+            child: _Message(
+              title: '아직 버튼이 없어요',
+              detail: '아래에서 버튼을 추가하면 부모님 홈 화면에 나타납니다.',
+            ),
+          )
+        else
+          Expanded(
+            child: ReorderableListView(
+              key: GuardianLauncherKeys.list,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              onReorder: (oldIndex, newIndex) =>
+                  _run(context, ref, (c) => c.reorder(oldIndex, newIndex)),
+              children: [
+                for (final app in apps)
+                  _AppRow(
+                    key: ValueKey(app.id),
+                    app: app,
+                    onRename: () => _rename(context, ref, app),
+                    onRecolour: () => _recolour(context, ref, app),
+                    onDelete: () => _confirmDelete(context, ref, app),
+                  ),
+              ],
+            ),
+          ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: FilledButton.icon(
+              key: GuardianLauncherKeys.add,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.guardianPrimary,
+                minimumSize: const Size.fromHeight(52),
+              ),
+              onPressed: () => _add(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('버튼 추가하기'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Every edit reports its own failure. The write goes to someone else's
+  /// phone, so "it looked like it worked" is not good enough.
+  static Future<void> _run(
+    BuildContext context,
+    WidgetRef ref,
+    Future<bool> Function(GuardianHomeAppsController) action,
+  ) async {
+    final ok = await action(ref.read(guardianHomeAppsProvider.notifier));
+    if (ok || !context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('바꾸지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.')),
+      );
+  }
+
+  Future<void> _rename(
+    BuildContext context,
+    WidgetRef ref,
+    LauncherApp app,
+  ) async {
+    final name = await _askForName(context, title: '이름 바꾸기', initial: app.label);
+    if (name == null || !context.mounted) return;
+    await _run(context, ref, (c) => c.rename(app.id, name));
+  }
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final name = await _askForName(context, title: '버튼 추가하기', initial: '');
+    if (name == null || !context.mounted) return;
+    await _run(
+      context,
+      ref,
+      (c) => c.add(label: name, category: AppCategory.message),
+    );
+  }
+
+  Future<void> _recolour(
+    BuildContext context,
+    WidgetRef ref,
+    LauncherApp app,
+  ) async {
+    final chosen = await showDialog<_ColourChoice>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('버튼 색'),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Wrap(
+              spacing: 14,
+              runSpacing: 14,
+              children: [
+                for (final colour in ButtonColor.values)
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context, _ColourChoice(colour)),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colour.color,
+                        border: Border.all(
+                          color: app.color == colour
+                              ? AppColors.guardianPrimary
+                              : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, const _ColourChoice(null)),
+            child: const Text('원래 색으로'),
+          ),
+        ],
+      ),
+    );
+    if (chosen == null || !context.mounted) return;
+    await _run(context, ref, (c) => c.setColor(app.id, chosen.colour));
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    LauncherApp app,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${app.label} 버튼을 지울까요?'),
+        content: const Text('부모님 홈 화면에서 사라집니다. 나중에 다시 추가할 수 있어요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('그만두기'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('지우기'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await _run(context, ref, (c) => c.remove(app.id));
+  }
+
+  static Future<String?> _askForName(
+    BuildContext context, {
+    required String title,
+    required String initial,
+  }) => showDialog<String>(
+    context: context,
+    builder: (context) => _NameDialog(title: title, initial: initial),
+  );
+}
+
+/// Wraps the nullable colour so "원래 색으로" can be told from a dismissed
+/// dialog — both would otherwise arrive as null.
+class _ColourChoice {
+  const _ColourChoice(this.colour);
+
+  final ButtonColor? colour;
+}
+
+class _NameDialog extends StatefulWidget {
+  const _NameDialog({required this.title, required this.initial});
+
+  final String title;
+  final String initial;
+
+  @override
+  State<_NameDialog> createState() => _NameDialogState();
+}
+
+class _NameDialogState extends State<_NameDialog> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: '버튼 이름',
+          hintText: '어르신이 알아보실 이름으로',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('그만두기'),
+        ),
+        TextButton(
+          onPressed: () {
+            final name = _controller.text.trim();
+            if (name.isNotEmpty) Navigator.pop(context, name);
+          },
+          child: const Text('저장'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AppRow extends StatelessWidget {
+  const _AppRow({
+    super.key,
+    required this.app,
+    required this.onRename,
+    required this.onRecolour,
+    required this.onDelete,
+  });
+
+  final LauncherApp app;
+  final VoidCallback onRename;
+  final VoidCallback onRecolour;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.guardianSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.guardianBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: app.baseColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(app.category.icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextButton(
+              key: GuardianLauncherKeys.rename(app.id),
+              onPressed: onRename,
+              style: TextButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.zero,
+              ),
+              child: Text(
+                app.label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.guardianOnSurface,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            key: GuardianLauncherKeys.colour(app.id),
+            onPressed: onRecolour,
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: '색 바꾸기',
+          ),
+          IconButton(
+            key: GuardianLauncherKeys.delete(app.id),
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+            tooltip: '지우기',
+          ),
+          const Icon(Icons.drag_handle, color: Color(0xFF9C8770)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message({
+    super.key,
+    required this.title,
+    required this.detail,
+    this.onRetry,
+  });
+
+  final String title;
+  final String detail;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              detail,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: Color(0xFF6B6459),
+              ),
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 18),
+              OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

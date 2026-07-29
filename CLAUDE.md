@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 158 tests, all passing
+flutter test             # currently 167 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -48,8 +48,15 @@ than all at once.
   `SharedPreferencesSeniorSettingsRepository`; 설정 → 앱 설정하기 reorders,
   renames, recolours and removes buttons, 글씨 크기 조절하기 picks the text size.
   Both homes draw from the saved list rather than the constant defaults.
-- **Phase 3 (guardian dashboard)** — done as UI only. Four tabs, navigable with
-  no backend, all data mocked.
+- **Phase 3 (guardian dashboard)** — done. Built as mocked UI, then wired to
+  the live data after Phase 4: 홈 화면 reads and writes the parent's `home_apps`
+  rows, 홈 shows the real profile, the real active device and the settings the
+  parent chose, and the parent switcher is real when more than one is linked.
+  The mocked battery / ringer / network readings were **removed** rather than
+  kept — they arrive with the Phase 6 background sync, and a plausible
+  `배터리 72%` on a dashboard whose job is to reassure is worse than an empty
+  state that says so. 돌봄 and the 4-digit code card are still Phase 5/6 shapes
+  and are labelled 준비 중.
 - **Phase 4 (Supabase)** — done. Schema, RLS and RPCs are applied to the live
   project; guardian email sign-in, senior profile creation, device registration
   and two-way home-app sync all work. See `## Supabase` below.
