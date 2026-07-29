@@ -6,6 +6,8 @@ import '../../features/guardian/presentation/guardian_login_placeholder.dart';
 import '../../features/guardian/presentation/guardian_start_screen.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
 import '../../features/launcher/presentation/easy_home_screen.dart';
+import '../../features/launcher/presentation/app_settings_screen.dart';
+import '../../features/launcher/presentation/font_size_screen.dart';
 import '../../features/launcher/presentation/more_apps_placeholder.dart';
 import '../../features/launcher/presentation/sos_screen.dart';
 import '../../features/onboarding/presentation/screen_mode_choice_screen.dart';
@@ -52,6 +54,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.moreApps,
         builder: (context, state) => const MoreAppsPlaceholder(),
+      ),
+      GoRoute(
+        path: Routes.appSettings,
+        builder: (context, state) => const AppSettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.fontSize,
+        builder: (context, state) => const FontSizeScreen(),
       ),
     ],
   );

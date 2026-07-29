@@ -31,25 +31,31 @@ class SosButton extends StatelessWidget {
                 ),
               ],
             ),
+            // Scales down rather than clipping: at 아주 크게 the label and
+            // icon no longer fit the pill, and SOS is the one control that
+            // must never be half off the screen.
             child: const Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_active,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    '긴급 구조 요청',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.notifications_active,
                       color: Colors.white,
+                      size: 28,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 12),
+                    Text(
+                      '긴급 구조 요청',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

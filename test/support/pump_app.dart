@@ -27,6 +27,11 @@ Future<void> pumpApp(
   // not exist under `flutter test` — without a mock store every save throws
   // and navigation stalls on the screen-mode choice. Pass [prefs] to start the
   // app as though a previous run had already saved something.
+  //
+  // The reset matters: SharedPreferences caches its instance for the life of
+  // the isolate, so without it the second test in a file silently reads the
+  // first test's store and passes for the wrong reason.
+  SharedPreferences.resetStatic();
   SharedPreferences.setMockInitialValues(prefs);
 
   // The screens are laid out for a phone; the 800x600 default would push the

@@ -40,20 +40,27 @@ class AppTile extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(cat.icon, size: 50, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Text(
-                    app.label,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+              // The whole tile scales down to fit rather than overflowing.
+              // Raising the text size is the point of this app, so a tile that
+              // breaks at 아주 크게 breaks the feature it exists to serve.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(cat.icon, size: 50, color: Colors.white),
+                    const SizedBox(height: 8),
+                    Text(
+                      app.label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

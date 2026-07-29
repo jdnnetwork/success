@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/launcher_app.dart';
+import '../application/senior_settings_controller.dart';
 import 'widgets/app_tile.dart';
 
 /// 자세한 화면 — scrollable 2-col grid (6 default + 2 add-slots) with bottom
@@ -60,13 +62,18 @@ class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
   }
 }
 
-class _HomeGrid extends StatelessWidget {
+class _HomeGrid extends ConsumerWidget {
   const _HomeGrid({required this.onOpen});
 
   final void Function(LauncherApp) onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Saved buttons rather than the constant defaults, so an edit made in
+    // 설정 reaches the home screen.
+    final saved = ref.watch(seniorSettingsControllerProvider).value?.apps;
+    final apps = (saved == null || saved.isEmpty) ? defaultDetailedApps : saved;
+
     // SingleChildScrollView + shrinkWrap grid: scrollable for real use AND
     // builds all 8 cells eagerly (so widget tests find every tile/slot).
     return SingleChildScrollView(
@@ -78,7 +85,7 @@ class _HomeGrid extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          for (final app in defaultDetailedApps)
+          for (final app in apps)
             AppTile(app: app, onTap: () => onOpen(app)),
           _AddSlot(),
           _AddSlot(),
@@ -116,36 +123,38 @@ class _AddSlot extends StatelessWidget {
   }
 }
 
-/// Inline settings placeholder (full settings is Phase 2/3).
+/// 설정 tab. The first two entries are live in Phase 2; the rest land later.
 class _SettingsPanel extends StatelessWidget {
   const _SettingsPanel();
 
   @override
   Widget build(BuildContext context) {
-    const items = [
-      '앱 설정하기',
-      '글씨 크기 조절하기',
-      '가족 연결 설정',
-      '진동/벨소리 전환',
-      '잘보이네 사용하지 않기',
+    final items = <(String, String?)>[
+      ('앱 설정하기', Routes.appSettings),
+      ('글씨 크기 조절하기', Routes.fontSize),
+      ('가족 연결 설정', null),
+      ('진동/벨소리 전환', null),
+      ('잘보이네 사용하지 않기', null),
     ];
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        for (final label in items)
+        for (final (label, route) in items)
           Card(
             color: AppColors.seniorSurface,
             child: ListTile(
               title: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.seniorOnSurface,
+                  color: route == null
+                      ? AppColors.seniorTextSecondary
+                      : AppColors.seniorOnSurface,
                 ),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
+              onTap: route == null ? null : () => context.push(route),
             ),
           ),
       ],

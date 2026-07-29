@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/launcher_app.dart';
+import '../application/senior_settings_controller.dart';
 import 'widgets/app_tile.dart';
 import 'widgets/sos_button.dart';
 
 /// 정말 쉬운 화면 — 2x2 tiles, 가족 연결, SOS, 더 보기. No scrolling, depth 1.
-class EasyHomeScreen extends StatelessWidget {
+///
+/// The tiles come from the saved settings rather than the constant defaults,
+/// so a rename or a removal made in 설정 actually reaches the home screen.
+class EasyHomeScreen extends ConsumerWidget {
   const EasyHomeScreen({super.key});
 
   void _openApp(BuildContext context, LauncherApp app) {
@@ -18,60 +23,27 @@ class EasyHomeScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(seniorSettingsControllerProvider).value?.apps;
+    final apps = (saved == null || saved.isEmpty) ? defaultEasyApps : saved;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: Column(
             children: [
-              // 2×2 grid using fixed Column/Row so all 4 tiles always build.
+              // Two per row, laid out from the saved list so the grid shrinks
+              // with it instead of indexing past the end.
               Expanded(
-                child: Column(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AppTile(
-                              app: defaultEasyApps[0],
-                              onTap: () =>
-                                  _openApp(context, defaultEasyApps[0]),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: AppTile(
-                              app: defaultEasyApps[1],
-                              onTap: () =>
-                                  _openApp(context, defaultEasyApps[1]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AppTile(
-                              app: defaultEasyApps[2],
-                              onTap: () =>
-                                  _openApp(context, defaultEasyApps[2]),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: AppTile(
-                              app: defaultEasyApps[3],
-                              onTap: () =>
-                                  _openApp(context, defaultEasyApps[3]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    for (final app in apps)
+                      AppTile(app: app, onTap: () => _openApp(context, app)),
                   ],
                 ),
               ),
