@@ -1,0 +1,225 @@
+import 'dart:async';
+
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+
+import '../../domain/guardian_account.dart';
+
+/// Raised when sign-in or sign-up fails for a reason the guardian can act on.
+///
+/// Carries a Korean message because every caller is a screen. Supabase's own
+/// messages are English and phrased for developers.
+class GuardianAuthException implements Exception {
+  const GuardianAuthException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+/// What a sign-up attempt produced.
+///
+/// The project requires email confirmation, so signing up usually yields no
+/// session at all. Returning that as a state rather than an error is the whole
+/// point — the screen has to say 메일함을 확인해 주세요 instead of showing a failure.
+class GuardianSignUpResult {
+  const GuardianSignUpResult({this.session, required this.needsConfirmation});
+
+  final GuardianSession? session;
+  final bool needsConfirmation;
+}
+
+/// Guardian authentication.
+///
+/// Email/password only in Phase 4. `GuardianStartScreen` offers Kakao and
+/// Google, and both are the intended path, but neither has an OAuth client
+/// configured on the project yet; wiring a button that cannot complete would
+/// be worse than one honest route that works.
+abstract interface class GuardianAuthRepository {
+  GuardianSession? get currentSession;
+
+  /// Emits on every sign-in, sign-out and token refresh, starting with the
+  /// session already restored from disk.
+  Stream<GuardianSession?> sessionChanges();
+
+  Future<GuardianSession> signIn({
+    required String email,
+    required String password,
+  });
+
+  Future<GuardianSignUpResult> signUp({
+    required String email,
+    required String password,
+  });
+
+  Future<void> signOut();
+}
+
+class SupabaseGuardianAuthRepository implements GuardianAuthRepository {
+  SupabaseGuardianAuthRepository(this._client);
+
+  final sb.SupabaseClient _client;
+
+  @override
+  GuardianSession? get currentSession => _toSession(_client.auth.currentSession);
+
+  @override
+  Stream<GuardianSession?> sessionChanges() async* {
+    yield currentSession;
+    yield* _client.auth.onAuthStateChange.map((e) => _toSession(e.session));
+  }
+
+  @override
+  Future<GuardianSession> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final session = _toSession(response.session);
+      if (session == null) {
+        throw const GuardianAuthException('로그인하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      }
+      return session;
+    } on sb.AuthException catch (e) {
+      throw GuardianAuthException(_readable(e));
+    }
+  }
+
+  @override
+  Future<GuardianSignUpResult> signUp({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _client.auth.signUp(
+        email: email.trim(),
+        password: password,
+      );
+      final session = _toSession(response.session);
+      return GuardianSignUpResult(
+        session: session,
+        needsConfirmation: session == null,
+      );
+    } on sb.AuthException catch (e) {
+      throw GuardianAuthException(_readable(e));
+    }
+  }
+
+  @override
+  Future<void> signOut() => _client.auth.signOut();
+
+  static GuardianSession? _toSession(sb.Session? session) {
+    final user = session?.user;
+    if (user == null) return null;
+    return GuardianSession(userId: user.id, email: user.email);
+  }
+
+  /// Only the cases a guardian can do something about are translated; anything
+  /// else keeps Supabase's text so a bug does not hide behind a friendly line.
+  static String _readable(sb.AuthException e) {
+    final code = e.code ?? '';
+    if (code == 'invalid_credentials' ||
+        e.message.contains('Invalid login credentials')) {
+      return '이메일이나 비밀번호가 맞지 않아요.';
+    }
+    if (code == 'email_not_confirmed') {
+      return '메일함에서 인증 메일을 먼저 확인해 주세요.';
+    }
+    if (code == 'user_already_exists' || code == 'email_exists') {
+      return '이미 가입된 이메일이에요. 로그인해 주세요.';
+    }
+    if (code == 'weak_password') {
+      return '비밀번호가 너무 짧아요. 6자 이상으로 정해 주세요.';
+    }
+    if (code == 'over_email_send_rate_limit') {
+      return '메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.';
+    }
+    return e.message;
+  }
+}
+
+/// Stand-in used when the build carries no Supabase keys, and by tests.
+///
+/// Behaves like the real thing on the paths screens depend on — a bad password
+/// fails, a duplicate email fails, a session survives until sign-out — so a
+/// widget test exercises the same branches the live repository would.
+class InMemoryGuardianAuthRepository implements GuardianAuthRepository {
+  InMemoryGuardianAuthRepository({this.confirmationRequired = true});
+
+  /// Mirrors the project's `mailer_autoconfirm = false`.
+  final bool confirmationRequired;
+
+  final _accounts = <String, String>{};
+  final _confirmed = <String>{};
+  final _sessions = StreamController<GuardianSession?>.broadcast();
+
+  GuardianSession? _current;
+
+  @override
+  GuardianSession? get currentSession => _current;
+
+  @override
+  Stream<GuardianSession?> sessionChanges() async* {
+    yield _current;
+    yield* _sessions.stream;
+  }
+
+  @override
+  Future<GuardianSession> signIn({
+    required String email,
+    required String password,
+  }) async {
+    final key = email.trim().toLowerCase();
+    if (_accounts[key] != password) {
+      throw const GuardianAuthException('이메일이나 비밀번호가 맞지 않아요.');
+    }
+    if (!_confirmed.contains(key)) {
+      throw const GuardianAuthException('메일함에서 인증 메일을 먼저 확인해 주세요.');
+    }
+    return _emit(GuardianSession(userId: 'user-$key', email: key))!;
+  }
+
+  @override
+  Future<GuardianSignUpResult> signUp({
+    required String email,
+    required String password,
+  }) async {
+    final key = email.trim().toLowerCase();
+    if (_accounts.containsKey(key)) {
+      throw const GuardianAuthException('이미 가입된 이메일이에요. 로그인해 주세요.');
+    }
+    if (password.length < 6) {
+      throw const GuardianAuthException('비밀번호가 너무 짧아요. 6자 이상으로 정해 주세요.');
+    }
+    _accounts[key] = password;
+    if (confirmationRequired) {
+      return const GuardianSignUpResult(needsConfirmation: true);
+    }
+    _confirmed.add(key);
+    return GuardianSignUpResult(
+      session: _emit(GuardianSession(userId: 'user-$key', email: key)),
+      needsConfirmation: false,
+    );
+  }
+
+  @override
+  Future<void> signOut() async => _emit(null);
+
+  /// Lets a test start from a signed-in guardian without a round trip.
+  void seedSignedIn(GuardianSession session) => _emit(session);
+
+  /// Marks an address as having followed the confirmation link.
+  void confirm(String email) => _confirmed.add(email.trim().toLowerCase());
+
+  GuardianSession? _emit(GuardianSession? session) {
+    _current = session;
+    if (!_sessions.isClosed) _sessions.add(session);
+    return session;
+  }
+
+  void dispose() => _sessions.close();
+}

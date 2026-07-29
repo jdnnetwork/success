@@ -4,16 +4,40 @@ import '../../../data/senior_settings_repository.dart';
 import '../../../domain/app_category.dart';
 import '../../../domain/launcher_app.dart';
 import '../../../domain/senior_settings.dart';
+import 'senior_settings_sync.dart';
 
 /// Holds the senior's settings, loading from and saving to the repository.
 ///
 /// Every edit writes through before the new state is published, so what the
 /// screen shows is what survived to disk. On this app that matters more than
 /// the extra await: it is the phone's home screen.
+///
+/// Since Phase 4 each write is also pushed to Supabase, but never in the path
+/// the senior waits on: disk is the source of truth, the server is a copy, and
+/// an edit must land at full speed on a phone with no signal.
 class SeniorSettingsController extends AsyncNotifier<SeniorSettings> {
+  Future<void>? _sync;
+
+  /// The push started by the most recent write, for tests and for callers that
+  /// need the server to have caught up. Never completes with an error.
+  Future<void> get pendingSync => _sync ?? Future<void>.value();
+
   @override
   Future<SeniorSettings> build() {
     return ref.watch(seniorSettingsRepositoryProvider).load();
+  }
+
+  /// Adopts whatever the server holds for this phone's profile.
+  ///
+  /// Called after the phone is linked, so a guardian who arranged the home
+  /// screen before the parent connected sees their arrangement take effect.
+  Future<bool> pullFromServer() async {
+    final current = state.value ?? const SeniorSettings();
+    final merged = await ref.read(seniorSettingsSyncProvider).pull(current);
+    if (merged == null) return false;
+    await ref.read(seniorSettingsRepositoryProvider).save(merged);
+    state = AsyncData(merged);
+    return true;
   }
 
   /// Picks the mode and, on a home that has no buttons yet, seeds that mode's
@@ -94,6 +118,10 @@ class SeniorSettingsController extends AsyncNotifier<SeniorSettings> {
   Future<void> _write(SeniorSettings settings) async {
     await ref.read(seniorSettingsRepositoryProvider).save(settings);
     state = AsyncData(settings);
+    // Deliberately not awaited: the senior has already seen the change, and
+    // holding the edit open for a round trip would make every rename feel like
+    // a network operation. `push` swallows its own failures.
+    _sync = ref.read(seniorSettingsSyncProvider).push(settings);
   }
 
   /// Buttons are identified by id rather than label, so two buttons may share

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -7,6 +8,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:app/core/supabase/supabase_config.dart';
+import 'package:app/core/supabase/supabase_providers.dart';
+import 'package:app/data/remote/guardian_auth_repository.dart';
+import 'package:app/data/remote/senior_link_repository.dart';
+import 'package:app/data/senior_link_store.dart';
+import 'package:app/data/senior_settings_repository.dart';
+import 'package:app/domain/launcher_app.dart';
+import 'package:app/domain/senior_settings.dart';
+import 'package:app/features/family/presentation/family_link_screen.dart';
+import 'package:app/features/guardian/presentation/guardian_login_screen.dart';
 import 'package:app/features/guardian/presentation/guardian_start_screen.dart';
 import 'package:app/features/onboarding/presentation/splash_screen.dart';
 
@@ -130,6 +141,73 @@ void main() {
     ]) {
       await tester.tap(find.text(tab));
       await tester.pumpAndSettle();
+      await _capture(tester, name);
+    }
+  });
+
+  testWidgets('the guardian login form renders', (tester) async {
+    await pumpApp(
+      tester,
+      overrides: [
+        supabaseConfigProvider.overrideWithValue(
+          const SupabaseConfig(url: 'https://example.supabase.co', anonKey: 'k'),
+        ),
+        // Both repositories too: with the config claiming a project exists,
+        // the real providers would reach for a Supabase singleton that was
+        // never initialised.
+        guardianAuthRepositoryProvider.overrideWithValue(
+          InMemoryGuardianAuthRepository(),
+        ),
+        seniorLinkRepositoryProvider.overrideWithValue(
+          InMemorySeniorLinkRepository(),
+        ),
+      ],
+    );
+    await tester.tap(find.byKey(SplashScreen.guardianCardKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(GuardianStartKeys.kakao));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(GuardianStartKeys.emailFallback));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(GuardianLoginKeys.email), findsOneWidget);
+    await _capture(tester, '09-guardian-login');
+  });
+
+  testWidgets('가족 연결 renders, including at 아주 크게', (tester) async {
+    // Raising the text size is the point of this app, so a screen that only
+    // fits at the default size is a bug. Both sizes are captured so the
+    // large one can actually be looked at.
+    for (final (size, name) in [
+      (FontSize.normal, '10-family-link'),
+      (FontSize.extraLarge, '11-family-link-extra-large'),
+    ]) {
+      await pumpApp(
+        tester,
+        overrides: [
+          seniorLinkRepositoryProvider.overrideWithValue(
+            InMemorySeniorLinkRepository(),
+          ),
+          seniorLinkStoreProvider.overrideWithValue(InMemorySeniorLinkStore()),
+        ],
+        prefs: {
+          SharedPreferencesSeniorSettingsRepository.storageKey: jsonEncode(
+            SeniorSettings(
+              screenMode: ScreenMode.easy,
+              fontSize: size,
+              apps: defaultEasyApps,
+            ).toJson(),
+          ),
+        },
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('가족 연결'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(FamilyLinkKeys.submit), findsOneWidget);
+      // Nothing may overflow: an overflow paints a stripe and the layout the
+      // PNG is meant to prove is no longer the layout being reviewed.
+      expect(tester.takeException(), isNull);
       await _capture(tester, name);
     }
   });

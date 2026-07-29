@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/supabase/supabase_providers.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Widget keys the tests drive.
@@ -11,6 +13,7 @@ class GuardianStartKeys {
   static const back = Key('guardian-start-back');
   static const kakao = Key('guardian-start-kakao');
   static const google = Key('guardian-start-google');
+  static const emailFallback = Key('guardian-start-email-fallback');
 }
 
 /// Guardian entry. Argues for connecting before asking for an account.
@@ -305,7 +308,71 @@ class _BenefitCardState extends State<_BenefitCard>
   }
 }
 
-class _ProviderButton extends StatelessWidget {
+/// What a provider button does once a Supabase project is attached.
+///
+/// Kakao and Google are still the intended entry — this screen argues for them
+/// deliberately — but neither has an OAuth client configured on the project, so
+/// tapping one cannot complete a sign-in. Rather than fail on tap, it says so
+/// and offers the route that does work.
+///
+/// With no project attached the old behaviour stands and the button opens the
+/// dashboard, which is what keeps Phase 3 navigable with no backend.
+Future<void> _start(
+  BuildContext context,
+  String label, {
+  required bool supabaseConfigured,
+}) async {
+  if (!supabaseConfigured) {
+    context.go(Routes.guardianDashboard);
+    return;
+  }
+  final provider = label.split('로 시작하기').first;
+  final useEmail = await showModalBottomSheet<bool>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '$provider 로그인은 준비 중이에요',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.guardianStartInk,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '지금은 이메일로 시작하실 수 있어요.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: AppColors.guardianStartSub,
+              ),
+            ),
+            const SizedBox(height: 22),
+            FilledButton(
+              key: GuardianStartKeys.emailFallback,
+              onPressed: () => Navigator.of(sheetContext).pop(true),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+              child: const Text('이메일로 계속하기'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (useEmail == true && context.mounted) context.go(Routes.guardianLogin);
+}
+
+class _ProviderButton extends ConsumerWidget {
   const _ProviderButton({
     required this.buttonKey,
     required this.label,
@@ -323,7 +390,8 @@ class _ProviderButton extends StatelessWidget {
   final Color? borderColor;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configured = ref.watch(supabaseConfigProvider).isConfigured;
     return SizedBox(
       height: 56,
       width: double.infinity,
@@ -340,10 +408,8 @@ class _ProviderButton extends StatelessWidget {
                 : BorderSide(color: borderColor!, width: 1.4),
           ),
         ),
-        // Auth arrives with Supabase in Phase 4; until then both providers
-        // open the dashboard directly, so it can be navigated without a
-        // backend the way Phase 3 requires.
-        onPressed: () => context.go(Routes.guardianDashboard),
+        onPressed: () =>
+            _start(context, label, supabaseConfigured: configured),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

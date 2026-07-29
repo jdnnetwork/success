@@ -8,11 +8,13 @@ Future<void> _gotoEasyHome(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('가족 연결 opens the family-link placeholder', (tester) async {
+  testWidgets('가족 연결 opens the real connect screen', (tester) async {
+    // Phase 4 replaced the placeholder: the parent's phone can now join a
+    // profile by the number their child reads out.
     await _gotoEasyHome(tester);
     await tester.tap(find.text('가족 연결'));
     await tester.pumpAndSettle();
-    expect(find.text('가족 연결은 곧 준비됩니다'), findsOneWidget);
+    expect(find.text('자녀분이 알려준 번호를\n그대로 넣어 주세요'), findsOneWidget);
   });
 
   testWidgets('더 보기 opens the more-apps placeholder', (tester) async {

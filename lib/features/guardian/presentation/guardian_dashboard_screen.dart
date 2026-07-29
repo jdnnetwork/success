@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../domain/app_category.dart';
 import '../../../domain/launcher_app.dart';
 import '../../launcher/application/senior_settings_controller.dart';
+import 'add_senior_card.dart';
 
 /// 보호자 대시보드. Navigable without a backend — everything shown here is
 /// either local settings or mock data until Phase 4 wires Supabase.
@@ -344,6 +345,11 @@ class _FamilyTab extends StatelessWidget {
       // the same string.
       title: '가족 관리',
       children: [
+        // Phase 4: creates the profile for real and hands back the number the
+        // parent's phone actually accepts. The 가족 연결 코드 card below is the
+        // Phase 5 shape — a 4-digit code the parent reads out — and is still
+        // mocked, so the two are not the same number.
+        const _Card(child: AddSeniorCard()),
         _Card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,7 +391,7 @@ class _FamilyTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                '어머니 폰에서 이 숫자를 입력하면 연결됩니다',
+                '어머니 폰에서 이 숫자를 입력하면 연결됩니다 (준비 중)',
                 style: TextStyle(fontSize: 14, color: Color(0xFF6B6459)),
               ),
             ],

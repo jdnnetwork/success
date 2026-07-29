@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/guardian/presentation/guardian_login_placeholder.dart';
+import '../../features/guardian/application/guardian_session_controller.dart';
+import '../../features/guardian/presentation/guardian_dashboard_screen.dart';
 import '../../features/launcher/application/senior_settings_controller.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
 import '../../features/launcher/presentation/easy_home_screen.dart';
@@ -43,15 +44,16 @@ class LaunchGate extends ConsumerWidget {
       error: (_, _) => const SplashScreen(),
       data: (value) => switch (launchDestinationFor(
         savedScreenMode: value.screenMode,
-        // Sign-in state arrives with Supabase in Phase 4.
-        guardianSignedIn: false,
+        // Restored by Supabase from disk, so a guardian who signed in last
+        // week does not land on the splash.
+        guardianSignedIn: ref.watch(guardianSignedInProvider),
       )) {
         LaunchDestination.splash => const SplashScreen(),
         LaunchDestination.seniorHome => switch (value.screenMode!) {
           ScreenMode.easy => const EasyHomeScreen(),
           ScreenMode.detailed => const DetailedHomeScreen(),
         },
-        LaunchDestination.guardianDashboard => const GuardianLoginPlaceholder(),
+        LaunchDestination.guardianDashboard => const GuardianDashboardScreen(),
       },
     );
   }

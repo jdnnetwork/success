@@ -1,0 +1,292 @@
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+
+import '../../domain/guardian_account.dart';
+import '../../domain/senior_profile.dart';
+import '../../domain/senior_settings.dart';
+
+/// Raised when the server refuses a linking step for a reason worth showing.
+class SeniorLinkException implements Exception {
+  const SeniorLinkException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+/// Creating and connecting the two halves of a family: the guardian's account,
+/// the parent's profile, and the parent's phone.
+///
+/// Every write goes through a database function rather than a table. A profile
+/// and its link have to be created together — a profile with no link is a row
+/// that RLS makes unreadable to the person who just created it — and retiring
+/// the previous phone touches a row the new phone does not own.
+abstract interface class SeniorLinkRepository {
+  /// The guardian's own row, created on first sign-in and safe to call again.
+  Future<GuardianAccount> ensureGuardianAccount({
+    String? displayName,
+    String? phoneNumber,
+  });
+
+  Future<SeniorProfile> createSeniorProfile({
+    required String displayName,
+    String? ageBand,
+  });
+
+  Future<List<SeniorProfile>> linkedSeniorProfiles();
+
+  /// Called from the parent's phone: claims [customerCode] for this install and
+  /// retires whichever phone held the profile before.
+  Future<SeniorProfile> registerSeniorDevice({
+    required String customerCode,
+    required String installId,
+    String? deviceLabel,
+    String? platform,
+    String? osVersion,
+  });
+
+  Future<SeniorProfile> fetchProfile(String seniorProfileId);
+
+  /// Pushes the two settings that live on the profile rather than in
+  /// `home_apps`, so the guardian's dashboard can show what the parent chose.
+  Future<void> updateProfileSettings(
+    String seniorProfileId, {
+    ScreenMode? screenMode,
+    FontSize? fontSize,
+  });
+}
+
+class SupabaseSeniorLinkRepository implements SeniorLinkRepository {
+  SupabaseSeniorLinkRepository(this._client);
+
+  final sb.SupabaseClient _client;
+
+  @override
+  Future<GuardianAccount> ensureGuardianAccount({
+    String? displayName,
+    String? phoneNumber,
+  }) async {
+    final row = await _rpc('ensure_guardian_account', {
+      'p_display_name': displayName,
+      'p_phone_number': phoneNumber,
+    });
+    final account = GuardianAccount.fromRow(row);
+    if (account == null) {
+      throw const SeniorLinkException('보호자 계정을 만들지 못했어요.');
+    }
+    return account;
+  }
+
+  @override
+  Future<SeniorProfile> createSeniorProfile({
+    required String displayName,
+    String? ageBand,
+  }) async {
+    final row = await _rpc('create_senior_profile', {
+      'p_display_name': displayName,
+      'p_age_band': ageBand,
+    });
+    return _profile(row, '부모님을 추가하지 못했어요.');
+  }
+
+  @override
+  Future<List<SeniorProfile>> linkedSeniorProfiles() async {
+    try {
+      final rows = await _client
+          .from('senior_profiles')
+          .select()
+          .order('created_at');
+      return [for (final row in rows) ?SeniorProfile.fromRow(row)];
+    } on sb.PostgrestException catch (e) {
+      throw SeniorLinkException(e.message);
+    }
+  }
+
+  @override
+  Future<SeniorProfile> registerSeniorDevice({
+    required String customerCode,
+    required String installId,
+    String? deviceLabel,
+    String? platform,
+    String? osVersion,
+  }) async {
+    final code = customerCode.trim().toUpperCase();
+    try {
+      final row = await _rpc('register_senior_device', {
+        'p_customer_code': code,
+        'p_install_id': installId,
+        'p_device_label': deviceLabel,
+        'p_platform': platform,
+        'p_os_version': osVersion,
+      });
+      return _profile(row, '연결하지 못했어요.');
+    } on SeniorLinkException catch (e) {
+      // The function raises on a code nobody holds; that is the one failure the
+      // person typing can actually fix, so it gets its own wording.
+      if (e.message.contains('unknown customer code')) {
+        throw const SeniorLinkException('연결 번호가 맞지 않아요. 다시 확인해 주세요.');
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SeniorProfile> fetchProfile(String seniorProfileId) async {
+    try {
+      final row = await _client
+          .from('senior_profiles')
+          .select()
+          .eq('id', seniorProfileId)
+          .maybeSingle();
+      if (row == null) {
+        throw const SeniorLinkException('부모님 정보를 찾지 못했어요.');
+      }
+      return _profile(row, '부모님 정보를 읽지 못했어요.');
+    } on sb.PostgrestException catch (e) {
+      throw SeniorLinkException(e.message);
+    }
+  }
+
+  @override
+  Future<void> updateProfileSettings(
+    String seniorProfileId, {
+    ScreenMode? screenMode,
+    FontSize? fontSize,
+  }) async {
+    final patch = <String, Object?>{
+      if (screenMode != null) 'screen_mode': screenMode.name,
+      if (fontSize != null) 'font_size': fontSize.name,
+    };
+    if (patch.isEmpty) return;
+    try {
+      await _client
+          .from('senior_profiles')
+          .update(patch)
+          .eq('id', seniorProfileId);
+    } on sb.PostgrestException catch (e) {
+      throw SeniorLinkException(e.message);
+    }
+  }
+
+  Future<Map<String, Object?>> _rpc(String name, Map<String, Object?> params) async {
+    try {
+      final result = await _client.rpc(name, params: params);
+      if (result is Map<String, Object?>) return result;
+      if (result is List && result.isNotEmpty) {
+        final first = result.first;
+        if (first is Map<String, Object?>) return first;
+      }
+      throw SeniorLinkException('$name 응답을 읽지 못했어요.');
+    } on sb.PostgrestException catch (e) {
+      throw SeniorLinkException(e.message);
+    }
+  }
+
+  static SeniorProfile _profile(Map<String, Object?> row, String onFailure) {
+    final profile = SeniorProfile.fromRow(row);
+    if (profile == null) throw SeniorLinkException(onFailure);
+    return profile;
+  }
+}
+
+/// Stand-in used when the build carries no Supabase keys, and by tests.
+///
+/// Enforces the same two rules the database does: a profile is only visible to
+/// a guardian linked to it, and only one install is live per profile.
+class InMemorySeniorLinkRepository implements SeniorLinkRepository {
+  InMemorySeniorLinkRepository({this.guardianAuthUserId = 'guardian-1'});
+
+  final String guardianAuthUserId;
+
+  final Map<String, SeniorProfile> profiles = {};
+  final Map<String, String> activeInstallByProfile = {};
+  final List<String> linkedProfileIds = [];
+
+  GuardianAccount? _account;
+  int _seq = 0;
+
+  @override
+  Future<GuardianAccount> ensureGuardianAccount({
+    String? displayName,
+    String? phoneNumber,
+  }) async {
+    return _account = GuardianAccount(
+      id: _account?.id ?? 'account-1',
+      authUserId: guardianAuthUserId,
+      displayName: displayName ?? _account?.displayName,
+      phoneNumber: phoneNumber ?? _account?.phoneNumber,
+      email: _account?.email,
+    );
+  }
+
+  @override
+  Future<SeniorProfile> createSeniorProfile({
+    required String displayName,
+    String? ageBand,
+  }) async {
+    if (_account == null) {
+      throw const SeniorLinkException('보호자 계정이 없어요.');
+    }
+    _seq++;
+    final profile = SeniorProfile(
+      id: 'profile-$_seq',
+      displayName: displayName,
+      customerCode: 'CODE${_seq.toString().padLeft(4, '0')}',
+      ageBand: ageBand,
+    );
+    profiles[profile.id] = profile;
+    linkedProfileIds.add(profile.id);
+    return profile;
+  }
+
+  @override
+  Future<List<SeniorProfile>> linkedSeniorProfiles() async => [
+    for (final id in linkedProfileIds) ?profiles[id],
+  ];
+
+  @override
+  Future<SeniorProfile> registerSeniorDevice({
+    required String customerCode,
+    required String installId,
+    String? deviceLabel,
+    String? platform,
+    String? osVersion,
+  }) async {
+    final code = customerCode.trim().toUpperCase();
+    final match = profiles.values.where((p) => p.customerCode == code);
+    if (match.isEmpty) {
+      throw const SeniorLinkException('연결 번호가 맞지 않아요. 다시 확인해 주세요.');
+    }
+    final profile = match.first;
+    activeInstallByProfile[profile.id] = installId;
+    return profile;
+  }
+
+  @override
+  Future<SeniorProfile> fetchProfile(String seniorProfileId) async {
+    final profile = profiles[seniorProfileId];
+    if (profile == null) {
+      throw const SeniorLinkException('부모님 정보를 찾지 못했어요.');
+    }
+    return profile;
+  }
+
+  @override
+  Future<void> updateProfileSettings(
+    String seniorProfileId, {
+    ScreenMode? screenMode,
+    FontSize? fontSize,
+  }) async {
+    final profile = profiles[seniorProfileId];
+    if (profile == null) return;
+    profiles[seniorProfileId] = SeniorProfile(
+      id: profile.id,
+      displayName: profile.displayName,
+      customerCode: profile.customerCode,
+      ageBand: profile.ageBand,
+      screenMode: screenMode ?? profile.screenMode,
+      fontSize: fontSize ?? profile.fontSize,
+      paidConsentStatus: profile.paidConsentStatus,
+    );
+  }
+}

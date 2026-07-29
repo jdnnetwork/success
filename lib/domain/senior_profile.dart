@@ -1,0 +1,105 @@
+import 'senior_settings.dart';
+
+/// Whether the senior has agreed to the paid 안심 케어 features.
+///
+/// Present from Phase 4 because the column is, but nothing reads it until
+/// Phase 6 — `06_PERMISSION_AND_POLICY` makes consent a separate step after
+/// payment, so it cannot be inferred from a subscription row later.
+enum PaidConsentStatus { none, pending, granted, refused }
+
+/// The parent, as the server knows them.
+///
+/// Deliberately not the same object as [SeniorSettings]: the settings are what
+/// this phone draws right now and must survive with no network, while the
+/// profile is the record that outlives the phone. They overlap on screen mode
+/// and font size, and [SeniorProfile.applyTo] is the only place that overlap is
+/// resolved.
+class SeniorProfile {
+  const SeniorProfile({
+    required this.id,
+    required this.displayName,
+    required this.customerCode,
+    this.ageBand,
+    this.screenMode,
+    this.fontSize,
+    this.paidConsentStatus = PaidConsentStatus.none,
+  });
+
+  final String id;
+  final String displayName;
+
+  /// What the guardian reads to their parent so the phone can find this
+  /// profile. Phase 5 adds the shorter 4-digit code and the invite link.
+  final String customerCode;
+
+  final String? ageBand;
+
+  /// Both null until someone has actually chosen. A guardian who creates the
+  /// profile before the parent's phone connects has no opinion about either,
+  /// and a default here would let that silence overwrite a senior who had
+  /// already set 아주 크게.
+  final ScreenMode? screenMode;
+  final FontSize? fontSize;
+
+  final PaidConsentStatus paidConsentStatus;
+
+  /// Folds the server's copy into what this phone already has.
+  ///
+  /// The button list is not touched here — it syncs through `home_apps`, and
+  /// merging two lists of buttons is a different problem from picking one of
+  /// two enum values.
+  SeniorSettings applyTo(SeniorSettings settings) => settings.copyWith(
+    screenMode: screenMode ?? settings.screenMode,
+    fontSize: fontSize ?? settings.fontSize,
+  );
+
+  static SeniorProfile? fromRow(Map<String, Object?> row) {
+    final id = row['id'];
+    final displayName = row['display_name'];
+    final customerCode = row['customer_code'];
+    if (id is! String || displayName is! String || customerCode is! String) {
+      return null;
+    }
+    return SeniorProfile(
+      id: id,
+      displayName: displayName,
+      customerCode: customerCode,
+      ageBand: row['age_band'] as String?,
+      screenMode: _byName(ScreenMode.values, row['screen_mode']),
+      fontSize: _byName(FontSize.values, row['font_size']),
+      paidConsentStatus:
+          _byName(PaidConsentStatus.values, row['paid_consent_status']) ??
+          PaidConsentStatus.none,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is SeniorProfile &&
+      other.id == id &&
+      other.displayName == displayName &&
+      other.customerCode == customerCode &&
+      other.ageBand == ageBand &&
+      other.screenMode == screenMode &&
+      other.fontSize == fontSize &&
+      other.paidConsentStatus == paidConsentStatus;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    displayName,
+    customerCode,
+    ageBand,
+    screenMode,
+    fontSize,
+    paidConsentStatus,
+  );
+}
+
+T? _byName<T extends Enum>(List<T> values, Object? name) {
+  if (name is! String) return null;
+  for (final value in values) {
+    if (value.name == name) return value;
+  }
+  return null;
+}

@@ -1,0 +1,49 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+
+import '../../data/remote/guardian_auth_repository.dart';
+import '../../data/remote/home_apps_repository.dart';
+import '../../data/remote/senior_link_repository.dart';
+import 'supabase_config.dart';
+
+/// The build's Supabase settings. Overridden in tests that need to pretend a
+/// project is configured without one existing.
+final supabaseConfigProvider = Provider<SupabaseConfig>(
+  (ref) => SupabaseConfig.fromEnvironment,
+);
+
+/// The initialised client, or null when the build carries no keys.
+///
+/// Reading `Supabase.instance` before `Supabase.initialize` throws, so this
+/// asks the config first rather than catching the failure — a launcher must
+/// not depend on an exception path to draw its home screen.
+final supabaseClientProvider = Provider<sb.SupabaseClient?>((ref) {
+  if (!ref.watch(supabaseConfigProvider).isConfigured) return null;
+  return sb.Supabase.instance.client;
+});
+
+/// Each repository resolves to its Supabase implementation when the app has a
+/// project, and to the in-memory twin when it does not. Nothing above this
+/// layer knows which one it got, so every screen built in Phases 1–3 keeps
+/// working on a build with no backend.
+final guardianAuthRepositoryProvider = Provider<GuardianAuthRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  // No confirmation step in the fallback: with no project there is no mail to
+  // confirm, and Phase 3 requires the dashboard stay reachable with no backend.
+  if (client == null) {
+    return InMemoryGuardianAuthRepository(confirmationRequired: false);
+  }
+  return SupabaseGuardianAuthRepository(client);
+});
+
+final seniorLinkRepositoryProvider = Provider<SeniorLinkRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  if (client == null) return InMemorySeniorLinkRepository();
+  return SupabaseSeniorLinkRepository(client);
+});
+
+final homeAppsRepositoryProvider = Provider<HomeAppsRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  if (client == null) return InMemoryHomeAppsRepository();
+  return SupabaseHomeAppsRepository(client);
+});

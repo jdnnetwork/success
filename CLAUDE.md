@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 22 tests, all passing
+flutter test             # currently 137 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -50,57 +50,71 @@ than all at once.
   Both homes draw from the saved list rather than the constant defaults.
 - **Phase 3 (guardian dashboard)** — done as UI only. Four tabs, navigable with
   no backend, all data mocked.
-- **Phase 4 (Supabase)** — next, and blocked on the access token below.
+- **Phase 4 (Supabase)** — done. Schema, RLS and RPCs are applied to the live
+  project; guardian email sign-in, senior profile creation, device registration
+  and two-way home-app sync all work. See `## Supabase
 
-Route `/` is a launch gate, not a screen: a senior with a saved screen mode
-lands on their home instead of the splash, because this app becomes the phone's
-launcher and pressing Home must not show a splash. The guardian-session half of
-that check is stubbed `false` until Phase 4.
+Wired in as of Phase 4. `SUPABASE_ACCESS_TOKEN` in the environment is now a
+working Management API token (the earlier value was the dashboard's masked
+display copied as text; that is fixed).
 
-## Where the dashboard departs from the uploaded design
+Project: `jal 26.07`, ref `jnmvhdmxzonngqyicelx`, ap-southeast-1, PostgreSQL 17.
+`SUPABASE_PROJECT_REF` holds the ref.
 
-The design carried four things the project docs rule out, and the docs won.
-Restoring any of them means changing the PRD first, not just the screen:
+### Schema
 
-- 약 알림 / 복약 기록 — PRD Out Of MVP.
-- 보이스피싱 의심 전화 — PRD excludes call-content analysis; the feature is
-  scoped to numbers absent from the contact list and is named for that.
-- 실시간 위치 추적 — `06_PERMISSION_AND_POLICY` forbids the phrasing, since how
-  it is described is what the senior consents to.
-- 여러 보호자 초대 — free in the PRD, paid in the design.
+`supabase/migrations/20260729000000_phase4_core.sql` is the whole Phase 4
+schema and is already applied. Five tables — `guardian_accounts`,
+`senior_profiles`, `senior_devices`, `guardian_senior_links`, `home_apps` — all
+with RLS on, plus four RPCs (`ensure_guardian_account`, `create_senior_profile`,
+`register_senior_device`, `replace_home_apps`). Phase 5 and Phase 6 tables are
+deliberately absent.
 
-The docs' 메시지 탭 has no design and is not built.
+Two deviations from `05_DATA_MODEL`, both load-bearing:
 
-## Layout under large text
+- `senior_devices.auth_user_id` — the senior is never asked to make an account,
+  so their phone signs in **anonymously** and this column is what ties that
+  anonymous user to the profile RLS lets it touch. Anonymous sign-ins are
+  enabled on the project; turning them off breaks every senior device.
+- `home_apps.client_id` — the launcher's own `LauncherApp.id`, so a rename or a
+  recolour lands on the existing row instead of creating a second button.
 
-Raising the text size is the point of this app, so anything that only fits at
-the default size is a bug. The app tile, the SOS pill and the pairing-code row
-all scale down to fit rather than overflow — check new screens at 아주 크게.
+`senior_profiles.screen_mode` and `font_size` are both nullable with no default.
+Null means *nobody has chosen yet*: a guardian creates the profile before the
+parent's phone connects, and defaulting `font_size` to `normal` would let that
+silence shrink the text of a senior who had already set 아주 크게.
 
-`flutter test test/screenshots_test.dart` writes each screen to
-`build/screenshots/`. There is no display here and no way to build an APK
-(see below), so those PNGs are how layout gets reviewed.
+`tool/verify_supabase_phase4.py` walks the whole acceptance list against the
+live project — sign-in, linking, device swap, both sync directions, and the RLS
+denials — then deletes everything it made. Run it with
+`SSL_CERT_FILE=/root/.ccr/ca-bundle.crt python3 tool/verify_supabase_phase4.py`;
+without the CA bundle, and without a non-default `User-Agent`, the agent proxy
+403s Python.
 
-## Supabase
+### Running the app against it
 
-Not yet wired in, and deliberately so — Supabase is **Phase 4**, and the Phase 0
-plan explicitly removes `supabase_flutter` from `pubspec.yaml`. Don't add it
-early.
+Nothing is committed. The keys arrive at build time:
 
-The project (`jal 26.07`, ref `jnmvhdmxzonngqyicelx`, ap-southeast-1,
-PostgreSQL 17) exists and is healthy. `SUPABASE_ACCESS_TOKEN` in the
-environment is **not a working token**. It holds
-`sbp_cc48` + 32 `•` characters + `d352` — the dashboard's masked display,
-selected and copied as text — so every Management API call returns 401
-"JWT could not be decoded". This is not a network or permissions problem;
-don't debug it as one.
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://jnmvhdmxzonngqyicelx.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=<publishable key>
+```
 
-Supabase only shows a token in full at creation, so the original value is
-unrecoverable and a new token has to be issued. Copying it needs the
-dashboard's copy button: dragging over the text selects the mask again,
-which is how the current value got there. Only the repo owner can replace
-it, in the environment variable settings, and the change takes effect in the
-next session rather than the current one.
+**A build with no keys still runs.** `SupabaseConfig.isConfigured` is false, and
+every repository provider resolves to its `InMemory…` twin instead. Phases 0-3
+were built with no backend and `flutter test` has no keys, so that fallback is
+load-bearing, not a convenience — don't make any screen require a live client.
+
+### Guardian sign-in is email-only
+
+Kakao and Google have no OAuth client configured on the project, and only the
+repo owner can add one. `GuardianStartScreen` still leads with both buttons —
+that is a deliberate design decision, see the spec — but with a project attached
+they now open a sheet saying the provider is being prepared and offer the email
+route at `/guardian-login`. With no project attached they open the dashboard as
+they did in Phase 3. Email sign-up needs confirmation (`mailer_autoconfirm` is
+false), so signing up returns no session and the screen says to check the inbox.
 
 ## No APK from this environment
 

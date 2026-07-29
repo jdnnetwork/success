@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/family/presentation/family_link_placeholder.dart';
-import '../../features/guardian/presentation/guardian_login_placeholder.dart';
+import '../../features/family/presentation/family_link_screen.dart';
+import '../../features/guardian/presentation/guardian_login_screen.dart';
 import '../../features/guardian/presentation/guardian_dashboard_screen.dart';
 import '../../features/guardian/presentation/guardian_start_screen.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
@@ -16,9 +16,9 @@ import 'launch_gate.dart';
 import 'routes.dart';
 
 /// App-wide router. The first route is the launch gate: it decides whether the
-/// splash should be shown at all. It now reads the saved screen mode, so a
-/// senior who has chosen one lands on their home; the guardian-session check
-/// arrives with Supabase in Phase 4. See [launchDestinationFor].
+/// splash should be shown at all. It reads the saved screen mode, so a senior
+/// who has chosen one lands on their home, and since Phase 4 it also reads the
+/// restored guardian session. See [launchDestinationFor].
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: Routes.firstScreen,
@@ -37,7 +37,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.guardianLogin,
-        builder: (context, state) => const GuardianLoginPlaceholder(),
+        builder: (context, state) => const GuardianLoginScreen(),
       ),
       GoRoute(
         path: Routes.guardianDashboard,
@@ -54,7 +54,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.sos, builder: (context, state) => const SosScreen()),
       GoRoute(
         path: Routes.familyLink,
-        builder: (context, state) => const FamilyLinkPlaceholder(),
+        builder: (context, state) => const FamilyLinkScreen(),
       ),
       GoRoute(
         path: Routes.moreApps,
