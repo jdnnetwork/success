@@ -1,10 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/domain/senior_settings.dart';
 import 'package:app/data/senior_settings_repository.dart';
 import 'package:app/features/launcher/application/senior_settings_controller.dart';
 
 void main() {
+  // The default repository now writes to shared_preferences, whose platform
+  // channel does not exist under `flutter test`.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   test('initial state has no screen mode', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);

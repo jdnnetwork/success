@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/core/router/launch_gate.dart';
+import 'package:app/domain/senior_settings.dart';
 
 void main() {
   test('a device with nothing saved is sent to the splash', () {
@@ -14,7 +15,7 @@ void main() {
     // The app becomes the phone's launcher, so pressing Home must not land
     // on a splash screen.
     expect(
-      launchDestinationFor(savedScreenMode: 'easy', guardianSignedIn: false),
+      launchDestinationFor(savedScreenMode: ScreenMode.easy, guardianSignedIn: false),
       LaunchDestination.seniorHome,
     );
   });
@@ -29,7 +30,7 @@ void main() {
   test('a saved senior mode wins over a guardian session on the same device', () {
     // The senior's phone is the one that must never show a splash.
     expect(
-      launchDestinationFor(savedScreenMode: 'detailed', guardianSignedIn: true),
+      launchDestinationFor(savedScreenMode: ScreenMode.detailed, guardianSignedIn: true),
       LaunchDestination.seniorHome,
     );
   });

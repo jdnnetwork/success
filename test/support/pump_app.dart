@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/app.dart';
 import 'package:app/features/onboarding/presentation/splash_screen.dart';
 
@@ -20,7 +21,14 @@ const appRootKey = Key('app-root');
 Future<void> pumpApp(
   WidgetTester tester, {
   List<Object> overrides = const [],
+  Map<String, Object> prefs = const {},
 }) async {
+  // Settings now go through shared_preferences, whose platform channel does
+  // not exist under `flutter test` — without a mock store every save throws
+  // and navigation stalls on the screen-mode choice. Pass [prefs] to start the
+  // app as though a previous run had already saved something.
+  SharedPreferences.setMockInitialValues(prefs);
+
   // The screens are laid out for a phone; the 800x600 default would push the
   // illustration off the top.
   tester.view.physicalSize = const Size(390, 844);
