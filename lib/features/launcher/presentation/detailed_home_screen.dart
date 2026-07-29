@@ -6,7 +6,9 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/launcher_app.dart';
 import '../application/senior_settings_controller.dart';
+import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
+import 'widgets/default_home_prompt.dart';
 
 /// 자세한 화면 — scrollable 2-col grid (6 default + 2 add-slots) with bottom
 /// tabs: 첫 화면 / 설정 / SOS. SOS tab routes to the SOS screen.
@@ -19,12 +21,6 @@ class DetailedHomeScreen extends StatefulWidget {
 
 class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
   int _index = 0;
-
-  void _openApp(LauncherApp app) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')));
-  }
 
   void _onTab(int i) {
     if (i == 2) {
@@ -41,7 +37,7 @@ class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
         child: IndexedStack(
           index: _index,
           children: [
-            _HomeGrid(onOpen: _openApp),
+            const _HomeGrid(),
             const _SettingsPanel(),
           ],
         ),
@@ -63,9 +59,25 @@ class _DetailedHomeScreenState extends State<DetailedHomeScreen> {
 }
 
 class _HomeGrid extends ConsumerWidget {
-  const _HomeGrid({required this.onOpen});
+  const _HomeGrid();
 
-  final void Function(LauncherApp) onOpen;
+  /// Says so when nothing opened, rather than leaving the senior tapping a
+  /// tile that does nothing. Almost always the app is simply not installed.
+  Future<void> _openApp(
+    BuildContext context,
+    WidgetRef ref,
+    LauncherApp app,
+  ) async {
+    final opened = await ref
+        .read(appLauncherProvider)
+        .open(launchRequestFor(app.category));
+    if (opened || !context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('${app.label}을(를) 열 수 없어요. 자녀분께 말씀해 주세요.')),
+      );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,17 +90,25 @@ class _HomeGrid extends ConsumerWidget {
     // builds all 8 cells eagerly (so widget tests find every tile/slot).
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+      child: Column(
         children: [
-          for (final app in apps)
-            AppTile(app: app, onTap: () => onOpen(app)),
-          _AddSlot(),
-          _AddSlot(),
+          const DefaultHomePrompt(),
+          GridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              for (final app in apps)
+                AppTile(
+                  app: app,
+                  onTap: () => _openApp(context, ref, app),
+                ),
+              _AddSlot(),
+              _AddSlot(),
+            ],
+          ),
         ],
       ),
     );

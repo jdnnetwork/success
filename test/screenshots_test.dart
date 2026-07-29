@@ -17,6 +17,8 @@ import 'package:app/data/senior_settings_repository.dart';
 import 'package:app/domain/launcher_app.dart';
 import 'package:app/domain/senior_settings.dart';
 import 'package:app/features/family/presentation/family_link_screen.dart';
+import 'package:app/features/launcher/data/app_launcher.dart';
+import 'package:app/features/launcher/presentation/widgets/default_home_prompt.dart';
 import 'package:app/features/guardian/presentation/guardian_login_screen.dart';
 import 'package:app/features/guardian/presentation/guardian_start_screen.dart';
 import 'package:app/features/onboarding/presentation/splash_screen.dart';
@@ -207,6 +209,44 @@ void main() {
       expect(find.byKey(FamilyLinkKeys.submit), findsOneWidget);
       // Nothing may overflow: an overflow paints a stripe and the layout the
       // PNG is meant to prove is no longer the layout being reviewed.
+      expect(tester.takeException(), isNull);
+      await _capture(tester, name);
+    }
+  });
+
+  testWidgets('the home-app prompt fits both homes, including at 아주 크게', (
+    tester,
+  ) async {
+    // 정말 쉬운 화면 does not scroll, so the prompt has to fit alongside the
+    // grid rather than push it off — and it is shown at whatever text size the
+    // senior already chose, which may be the largest one.
+    for (final (mode, size, name) in [
+      (ScreenMode.easy, FontSize.normal, '12-home-prompt-easy'),
+      (ScreenMode.easy, FontSize.extraLarge, '13-home-prompt-easy-extra-large'),
+      (ScreenMode.detailed, FontSize.extraLarge, '14-home-prompt-detailed'),
+    ]) {
+      await pumpApp(
+        tester,
+        overrides: [
+          appLauncherProvider.overrideWithValue(
+            FakeAppLauncher(defaultHome: false),
+          ),
+        ],
+        prefs: {
+          SharedPreferencesSeniorSettingsRepository.storageKey: jsonEncode(
+            SeniorSettings(
+              screenMode: mode,
+              fontSize: size,
+              apps: mode == ScreenMode.easy
+                  ? defaultEasyApps
+                  : defaultDetailedApps,
+            ).toJson(),
+          ),
+        },
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(DefaultHomePrompt.promptKey), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _capture(tester, name);
     }

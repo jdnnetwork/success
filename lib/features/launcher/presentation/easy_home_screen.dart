@@ -6,7 +6,9 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/launcher_app.dart';
 import '../application/senior_settings_controller.dart';
+import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
+import 'widgets/default_home_prompt.dart';
 import 'widgets/sos_button.dart';
 
 /// 정말 쉬운 화면 — 2x2 tiles, 가족 연결, SOS, 더 보기. No scrolling, depth 1.
@@ -16,10 +18,22 @@ import 'widgets/sos_button.dart';
 class EasyHomeScreen extends ConsumerWidget {
   const EasyHomeScreen({super.key});
 
-  void _openApp(BuildContext context, LauncherApp app) {
+  /// Says so when nothing opened, rather than leaving the senior tapping a
+  /// tile that does nothing. Almost always the app is simply not installed.
+  Future<void> _openApp(
+    BuildContext context,
+    WidgetRef ref,
+    LauncherApp app,
+  ) async {
+    final opened = await ref
+        .read(appLauncherProvider)
+        .open(launchRequestFor(app.category));
+    if (opened || !context.mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('${app.label} 열기는 다음 단계에서 연결됩니다')));
+      ..showSnackBar(
+        SnackBar(content: Text('${app.label}을(를) 열 수 없어요. 자녀분께 말씀해 주세요.')),
+      );
   }
 
   @override
@@ -33,6 +47,7 @@ class EasyHomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: Column(
             children: [
+              const DefaultHomePrompt(),
               // Two per row, laid out from the saved list so the grid shrinks
               // with it instead of indexing past the end.
               Expanded(
@@ -43,7 +58,10 @@ class EasyHomeScreen extends ConsumerWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     for (final app in apps)
-                      AppTile(app: app, onTap: () => _openApp(context, app)),
+                      AppTile(
+                        app: app,
+                        onTap: () => _openApp(context, ref, app),
+                      ),
                   ],
                 ),
               ),

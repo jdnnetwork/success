@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'domain/senior_settings.dart';
+import 'features/launcher/application/home_key_listener.dart';
 import 'features/launcher/application/senior_settings_controller.dart';
 
 /// Root widget. Uses the senior theme by default (the first screen is the
@@ -31,11 +32,14 @@ class App extends ConsumerWidget {
       // The senior's own choice replaces the system scale rather than
       // compounding with it: someone who already enlarged text OS-wide would
       // otherwise land on 그냥 크게 rendering enormous.
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(fontSize.scale)),
-        child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => HomeKeyListener(
+        router: router,
+        child: MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(fontSize.scale)),
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }
