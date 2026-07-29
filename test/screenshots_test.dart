@@ -64,7 +64,21 @@ Future<void> _loadImages(WidgetTester tester) async {
   await tester.pump();
 }
 
+/// Fetched by the SessionStart hook and by CI rather than committed — it is
+/// 10 MB and nothing but this file uses it.
+final _korean = File('test/fonts/NotoSansKR.ttf');
+
 void main() {
+  // Skipped rather than crashed on a clone that has not fetched it. Without a
+  // Korean face every label rasterises as tofu, so the PNGs would be worthless
+  // — and saying that once beats eight identical failures inside `setUpAll`.
+  if (!_korean.existsSync()) {
+    test('screenshots need a Korean font', () {},
+        skip: 'test/fonts/NotoSansKR.ttf is missing — run '
+            '.claude/hooks/session-start.sh to fetch it.');
+    return;
+  }
+
   setUpAll(() async {
     Future<void> register(String family, String path) async {
       final bytes = File(path).readAsBytesSync();
@@ -76,7 +90,7 @@ void main() {
     }
 
     for (final family in ['Roboto', 'Noto Sans KR']) {
-      await register(family, 'test/fonts/NotoSansKR.ttf');
+      await register(family, _korean.path);
     }
     // Icons are tofu without this; the glyphs ship with the SDK rather than
     // the project, so the path is resolved from the running Flutter install.

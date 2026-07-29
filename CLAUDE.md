@@ -219,6 +219,11 @@ Two things about it:
   is not a store build — a real upload key, and an `applicationId` that is not
   `com.example.app`, are both still to do.
 
+The `check` job fetches `test/fonts/NotoSansKR.ttf` the same way the
+SessionStart hook does, because the font is gitignored (10 MB) and without it
+`screenshots_test.dart` skips itself — the PNGs would be all tofu. That skip is
+also what a fresh clone gets, rather than eight failures inside `setUpAll`.
+
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are optional repository secrets. Unset,
 the APK still builds and runs on the in-memory repositories; sign-in, linking
 and syncing simply do not reach a server. The run summary says which of the two
