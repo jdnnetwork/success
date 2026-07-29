@@ -38,17 +38,48 @@ task-by-task.
 asks that each phase be implemented, reviewed, and tested on its own rather
 than all at once.
 
-- **Phase 0 (project setup)** — done. Riverpod, go_router, feature-first layout,
-  mock repositories.
-- **Phase 1 (senior launcher)** — done. Role split, screen-mode choice, easy and
-  detailed home, SOS phone handoff. Verified green.
-- **Phase 2 (local settings)** — next. Home-app model, add/remove/reorder,
-  rename, button colour, font size, screen-mode persistence. Acceptance is that
-  settings survive an app restart.
+- **Phase 0 (project setup)** — done. Riverpod, go_router, feature-first layout.
+- **Phase 1 (senior launcher)** — done, then reworked: the role-split screen was
+  replaced by the splash in
+  `docs/superpowers/specs/2026-07-29-splash-and-guardian-entry-design.md`. The
+  phone inside the illustration is the start control; there is no 시작하기
+  button, and removing it again would undo a deliberate decision.
+- **Phase 2 (local settings)** — done. Settings persist through
+  `SharedPreferencesSeniorSettingsRepository`; 설정 → 앱 설정하기 reorders,
+  renames, recolours and removes buttons, 글씨 크기 조절하기 picks the text size.
+  Both homes draw from the saved list rather than the constant defaults.
+- **Phase 3 (guardian dashboard)** — done as UI only. Four tabs, navigable with
+  no backend, all data mocked.
+- **Phase 4 (Supabase)** — next, and blocked on the access token below.
 
-`shared_preferences` is declared but not used yet: `lib/data/senior_settings_repository.dart`
-is still the in-memory mock. Replacing that mock with real persistence is the
-core of Phase 2.
+Route `/` is a launch gate, not a screen: a senior with a saved screen mode
+lands on their home instead of the splash, because this app becomes the phone's
+launcher and pressing Home must not show a splash. The guardian-session half of
+that check is stubbed `false` until Phase 4.
+
+## Where the dashboard departs from the uploaded design
+
+The design carried four things the project docs rule out, and the docs won.
+Restoring any of them means changing the PRD first, not just the screen:
+
+- 약 알림 / 복약 기록 — PRD Out Of MVP.
+- 보이스피싱 의심 전화 — PRD excludes call-content analysis; the feature is
+  scoped to numbers absent from the contact list and is named for that.
+- 실시간 위치 추적 — `06_PERMISSION_AND_POLICY` forbids the phrasing, since how
+  it is described is what the senior consents to.
+- 여러 보호자 초대 — free in the PRD, paid in the design.
+
+The docs' 메시지 탭 has no design and is not built.
+
+## Layout under large text
+
+Raising the text size is the point of this app, so anything that only fits at
+the default size is a bug. The app tile, the SOS pill and the pairing-code row
+all scale down to fit rather than overflow — check new screens at 아주 크게.
+
+`flutter test test/screenshots_test.dart` writes each screen to
+`build/screenshots/`. There is no display here and no way to build an APK
+(see below), so those PNGs are how layout gets reviewed.
 
 ## Supabase
 
@@ -70,6 +101,12 @@ dashboard's copy button: dragging over the text selects the mask again,
 which is how the current value got there. Only the repo owner can replace
 it, in the environment variable settings, and the change takes effect in the
 next session rather than the current one.
+
+## No APK from this environment
+
+`dl.google.com` is blocked by egress policy, which rules out both the Android
+SDK and the Android Gradle Plugin. Don't spend time installing either. Building
+an APK needs a local machine or CI.
 
 ## Conventions
 
