@@ -198,11 +198,31 @@ package, because Android has no category for them. 전화 resolves to
 user press call themselves, and that holds for the 전화 button exactly as it
 does for SOS.
 
-## No APK from this environment
+## No APK from this environment — build it in CI
 
 `dl.google.com` is blocked by egress policy, which rules out both the Android
-SDK and the Android Gradle Plugin. Don't spend time installing either. Building
-an APK needs a local machine or CI.
+SDK and the Android Gradle Plugin. Don't spend time installing either.
+
+`.github/workflows/android.yml` builds the APK on GitHub's runners on every
+push, and uploads it as a run artifact along with the review screenshots. That
+is the only place the Kotlin is ever compiled, and the only way to get the app
+onto a real phone from here.
+
+Two things about it:
+
+- The `apk` job deliberately does **not** depend on the `check` job. The first
+  question the workflow answers is whether the native half compiles at all, and
+  a failing Dart test must not withhold that answer.
+- The APK is signed with the **debug** key, because
+  `android/app/build.gradle.kts` still points the release build type at
+  `signingConfigs.debug`. It sideloads fine and is enough to test on a phone. It
+  is not a store build — a real upload key, and an `applicationId` that is not
+  `com.example.app`, are both still to do.
+
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` are optional repository secrets. Unset,
+the APK still builds and runs on the in-memory repositories; sign-in, linking
+and syncing simply do not reach a server. The run summary says which of the two
+you got.
 
 ## Conventions
 
