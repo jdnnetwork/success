@@ -49,14 +49,28 @@ class PairLink {
 
   bool isExpiredAt(DateTime now) => !now.isBefore(expiresAt);
 
+  /// The Play listing, with the token as the install referrer.
+  ///
+  /// This is what makes 경로 A automatic: Play hands the referrer to the app on
+  /// first launch, and it carries the token that says which family this is.
+  /// It only survives an install that actually went through the store, which
+  /// is exactly why [code] travels alongside it.
+  String installUrl(String applicationId) =>
+      'https://play.google.com/store/apps/details'
+      '?id=$applicationId&referrer=$token';
+
   /// The message body handed to the SMS app for 경로 A.
   ///
-  /// The app cannot send it — `07_PHASE_PLAN` is explicit — so nothing anywhere
-  /// may claim it was sent. This only produces the text.
-  String installMessage({required String seniorName, required String base}) =>
+  /// The app cannot send it — `07_PHASE_PLAN` is explicit that handing it to
+  /// the messaging app is as far as this goes — so nothing here or anywhere
+  /// else may claim it was sent. This only produces the text.
+  String installMessage({
+    required String seniorName,
+    required String applicationId,
+  }) =>
       '$seniorName님, 자녀가 보낸 잘보이네 설치 링크예요.\n'
-      '$base/join/$token\n\n'
-      '링크가 열리지 않으면 앱에서 연결 번호 $code 를 넣어 주세요.';
+      '${installUrl(applicationId)}\n\n'
+      '앱을 열고 나서 연결이 안 되면, 가족 연결 화면에 번호 $code 를 넣어 주세요.';
 
   static PairLink? fromRow(Map<String, Object?> row) {
     final id = row['id'];

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/features/guardian/presentation/guardian_dashboard_screen.dart';
+import 'package:app/features/guardian/presentation/guardian_family_tab.dart';
 import 'package:app/features/guardian/presentation/guardian_launcher_tab.dart';
 import 'package:app/features/onboarding/presentation/splash_screen.dart';
 
@@ -67,7 +68,7 @@ void main() {
     expect(find.text('안심 케어'), findsWidgets);
 
     await _openTab(tester, '가족');
-    expect(find.text('가족 연결 코드'), findsOneWidget);
+    expect(find.text('부모님 연결하기'), findsOneWidget);
 
     await _openTab(tester, '홈');
     expect(find.byKey(GuardianHomeKeys.noParent), findsOneWidget);
@@ -97,24 +98,28 @@ void main() {
     expect(find.textContaining('위치'), findsWidgets);
   });
 
-  testWidgets('inviting other guardians is shown as free', (tester) async {
+  testWidgets('both ways of connecting a parent are offered', (tester) async {
     await _gotoDashboard(tester);
     await _openTab(tester, '가족');
 
-    // The PRD lists 가족 보호자 초대 among the free features; the design had
-    // moved it behind 안심 케어.
-    expect(find.text('가족 초대하기'), findsOneWidget);
-    expect(find.textContaining('무료'), findsWidgets);
+    // 07_PHASE_PLAN has two paths, and path A depends on the Play install
+    // referrer surviving — so path B is not an advanced option to hide.
+    expect(find.text('설치 문자 보내기'), findsOneWidget);
+    expect(find.text('번호 입력하기'), findsOneWidget);
   });
 
-  testWidgets('the pairing code is shown with what to do with it', (
+  testWidgets('nothing that needs a parent is offered before there is one', (
     tester,
   ) async {
     await _gotoDashboard(tester);
     await _openTab(tester, '가족');
 
-    expect(find.text('가족 연결 코드'), findsOneWidget);
-    expect(find.textContaining('어머니 폰에서'), findsOneWidget);
+    // Recovery, the family invite and the guardian list all belong to a
+    // specific parent. The cases that need one live in
+    // guardian_family_tab_test.dart.
+    expect(find.byKey(GuardianFamilyKeys.recovery), findsNothing);
+    expect(find.byKey(GuardianFamilyKeys.familyInvite), findsNothing);
+    expect(find.byKey(GuardianFamilyKeys.guardians), findsNothing);
   });
 
   testWidgets('the home tab does not offer editing a parent who is not there', (

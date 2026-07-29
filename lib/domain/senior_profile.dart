@@ -23,6 +23,7 @@ class SeniorProfile {
     this.screenMode,
     this.fontSize,
     this.paidConsentStatus = PaidConsentStatus.none,
+    this.pendingPrimaryGuardianId,
   });
 
   final String id;
@@ -42,6 +43,11 @@ class SeniorProfile {
   final FontSize? fontSize;
 
   final PaidConsentStatus paidConsentStatus;
+
+  /// A guardian waiting for the senior to agree that they should be the one
+  /// answering for them. Null when nothing is outstanding — only one request
+  /// can be open at a time, so asking is never two questions at once.
+  final String? pendingPrimaryGuardianId;
 
   /// Folds the server's copy into what this phone already has.
   ///
@@ -70,6 +76,7 @@ class SeniorProfile {
       paidConsentStatus:
           _byName(PaidConsentStatus.values, row['paid_consent_status']) ??
           PaidConsentStatus.none,
+      pendingPrimaryGuardianId: row['pending_primary_guardian_id'] as String?,
     );
   }
 
@@ -82,7 +89,8 @@ class SeniorProfile {
       other.ageBand == ageBand &&
       other.screenMode == screenMode &&
       other.fontSize == fontSize &&
-      other.paidConsentStatus == paidConsentStatus;
+      other.paidConsentStatus == paidConsentStatus &&
+      other.pendingPrimaryGuardianId == pendingPrimaryGuardianId;
 
   @override
   int get hashCode => Object.hash(
@@ -93,6 +101,7 @@ class SeniorProfile {
     screenMode,
     fontSize,
     paidConsentStatus,
+    pendingPrimaryGuardianId,
   );
 }
 

@@ -7,7 +7,7 @@ import '../../../domain/senior_profile.dart';
 import '../../../domain/senior_settings.dart';
 import '../application/guardian_home_apps_controller.dart';
 import '../application/guardian_session_controller.dart';
-import 'add_senior_card.dart';
+import 'guardian_family_tab.dart';
 import 'guardian_launcher_tab.dart';
 
 /// 보호자 대시보드. Navigable without a backend — everything shown here is
@@ -47,7 +47,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
             _HomeTab(),
             GuardianLauncherTab(),
             _CareTab(),
-            _FamilyTab(),
+            GuardianFamilyTab(),
           ],
         ),
       ),
@@ -421,110 +421,3 @@ class _CareTab extends StatelessWidget {
 }
 
 /// 가족 — the docs' 설정 탭: connection, invites, parent info.
-class _FamilyTab extends StatelessWidget {
-  const _FamilyTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return _TabScaffold(
-      // Distinct from the tab label so the heading and the nav item are not
-      // the same string.
-      title: '가족 관리',
-      children: [
-        // Phase 4: creates the profile for real and hands back the number the
-        // parent's phone actually accepts. The 가족 연결 코드 card below is the
-        // Phase 5 shape — a 4-digit code the parent reads out — and is still
-        // mocked, so the two are not the same number.
-        const _Card(child: AddSeniorCard()),
-        _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '가족 연결 코드',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              // Scales down rather than clipping: four boxes at this padding
-              // overflow a narrow phone by a hair.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final digit in ['4', '7', '2', '9'])
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.guardianBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.guardianBorder),
-                        ),
-                        child: Text(
-                          digit,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '어머니 폰에서 이 숫자를 입력하면 연결됩니다 (준비 중)',
-                style: TextStyle(fontSize: 14, color: Color(0xFF6B6459)),
-              ),
-            ],
-          ),
-        ),
-        const _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '연결된 가족',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              SizedBox(height: 10),
-              Text('김지훈 · 대표 보호자', style: TextStyle(fontSize: 16)),
-              SizedBox(height: 6),
-              Text('김지원', style: TextStyle(fontSize: 16)),
-            ],
-          ),
-        ),
-        _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '가족 초대하기',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 6),
-              // Free per the PRD; the uploaded design had put this behind
-              // 안심 케어.
-              const Text(
-                '형제자매도 함께 돌볼 수 있어요. 무료입니다.',
-                style: TextStyle(fontSize: 14, height: 1.5),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.guardianPrimary,
-                ),
-                onPressed: () {},
-                child: const Text('초대 링크 보내기'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}

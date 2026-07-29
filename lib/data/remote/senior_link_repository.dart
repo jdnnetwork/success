@@ -352,7 +352,16 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
     if (profile == null) {
       throw const SeniorLinkException('부모님 정보를 찾지 못했어요.');
     }
-    return profile;
+    return SeniorProfile(
+      id: profile.id,
+      displayName: profile.displayName,
+      customerCode: profile.customerCode,
+      ageBand: profile.ageBand,
+      screenMode: profile.screenMode,
+      fontSize: profile.fontSize,
+      paidConsentStatus: profile.paidConsentStatus,
+      pendingPrimaryGuardianId: pendingPrimaryByProfile[seniorProfileId],
+    );
   }
 
   @override

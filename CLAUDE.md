@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 167 tests, all passing
+flutter test             # currently 209 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -64,10 +64,13 @@ than all at once.
   numbered plan, which never assigned them a phase. The home buttons now open
   real apps and the app can become the phone's home screen. Native, and
   unverified from this environment — see `## The launcher half is native` below.
-- **Phase 5 (pairing and recovery)** — next. The 4-digit code, the install link
-  and recovery are not built; Phase 4 links by the profile's 8-character
-  `customer_code` instead, and `SeniorLinkController.connect` is the seam the
-  Phase 5 flows plug into.
+- **Phase 5 (pairing and recovery)** — done. Both paths from the plan, recovery,
+  the free family invite and the primary-guardian handover, all applied to the
+  live project and verified by `tool/verify_supabase_phase5.py`. The Phase 4
+  `customer_code` path is superseded; the code direction is now the plan's —
+  the parent's phone **shows** a 4-digit code and the guardian types it.
+- **Phase 6 (paid features)** — next, and the only phase left. 안심 케어 and the
+  기기 상태 card on the dashboard are labelled 준비 중 until it lands.
 
 Route `/` is a launch gate, not a screen: a senior with a saved screen mode
 lands on their home instead of the splash, because this app becomes the phone's
@@ -151,6 +154,39 @@ flutter run \
 every repository provider resolves to its `InMemory…` twin instead. Phases 0-3
 were built with no backend and `flutter test` has no keys, so that fallback is
 load-bearing, not a convenience — don't make any screen require a live client.
+
+### Pairing (Phase 5)
+
+`supabase/migrations/20260730000000_phase5_pairing.sql` adds `pair_links` and
+`senior_profiles.pending_primary_guardian_id`. Four modes share one table
+because they are one idea — a short-lived secret granting exactly one
+attachment — but redeeming always names the mode, so a family invite can never
+be spent as a recovery.
+
+Three things worth knowing before changing any of it:
+
+- **The code direction is the plan's, not Phase 4's.** 경로 B is the parent's
+  phone *showing* a 4-digit code that the guardian types. A code cannot carry a
+  phone number, which is exactly why the guardian supplies the number and the
+  name at that moment.
+- **The parent's phone can create its own profile.** 경로 A rides on the Play
+  install referrer, which only survives a store install, so 경로 B is the
+  required fallback and has to work with no guardian present. `start_senior_pairing`
+  is that path; removing it removes the fallback.
+- **"연결됨" means a guardian is attached, not that a profile exists.** Showing a
+  code creates the profile. Keying the senior's screen off the profile told
+  them their family had arrived before anyone had typed the number.
+
+Every invite carries both a token (the referrer) and a code (for when the
+referrer did not survive). Expiries differ on purpose: 10 minutes for the
+4-digit code, 24 hours for recovery, 7 days for a family invite, 14 days for an
+install invite.
+
+Moving the primary guardian is answered on the senior's own phone —
+`PrimaryGuardianPrompt`, on both home screens. Not the requester, not the
+current primary, not any guardian. Everyone else in the list is a guardian, so
+nothing they agree among themselves establishes who should answer for the
+senior.
 
 ### Guardian sign-in is email-only
 

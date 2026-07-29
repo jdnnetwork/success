@@ -8,6 +8,7 @@ import '../../../domain/launcher_app.dart';
 import '../application/senior_settings_controller.dart';
 import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
+import '../../family/presentation/primary_guardian_prompt.dart';
 import 'widgets/default_home_prompt.dart';
 
 /// 자세한 화면 — scrollable 2-col grid (6 default + 2 add-slots) with bottom
@@ -92,6 +93,7 @@ class _HomeGrid extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          const PrimaryGuardianPrompt(),
           const DefaultHomePrompt(),
           GridView.count(
             crossAxisCount: 2,

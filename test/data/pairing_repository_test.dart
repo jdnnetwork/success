@@ -137,10 +137,13 @@ void main() {
 
       final body = link.installMessage(
         seniorName: '아버지',
-        base: 'https://jalboine.app',
+        applicationId: 'com.example.app',
       );
 
-      expect(body, contains(link.token));
+      // The token rides in as the Play install referrer, which is what makes
+      // 경로 A automatic; the code is there because that referrer only
+      // survives an install that went through the store.
+      expect(body, contains('referrer=${link.token}'));
       expect(body, contains(link.code));
       // Nothing here may claim the message was sent — the app can only hand it
       // to the SMS app, and cannot see what happens next.

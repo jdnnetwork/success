@@ -1,0 +1,489 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../data/remote/senior_link_repository.dart';
+import '../../../domain/pair_link.dart';
+import '../application/guardian_home_apps_controller.dart';
+import '../application/guardian_pairing_controller.dart';
+
+/// Widget keys the tests drive.
+class GuardianFamilyKeys {
+  GuardianFamilyKeys._();
+
+  static const invite = Key('guardian-family-invite');
+  static const enterCode = Key('guardian-family-enter-code');
+  static const codeField = Key('guardian-family-code-field');
+  static const nameField = Key('guardian-family-name-field');
+  static const phoneField = Key('guardian-family-phone-field');
+  static const confirm = Key('guardian-family-confirm');
+  static const message = Key('guardian-family-message');
+  static const issuedCode = Key('guardian-family-issued-code');
+  static const guardians = Key('guardian-family-guardians');
+  static const recovery = Key('guardian-family-recovery');
+  static const familyInvite = Key('guardian-family-invite-family');
+  static const requestPrimary = Key('guardian-family-request-primary');
+}
+
+/// 가족 관리 — connecting a parent, getting a replaced phone back, and who else
+/// is looking after them.
+class GuardianFamilyTab extends ConsumerWidget {
+  const GuardianFamilyTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(selectedSeniorProfileProvider);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        const Text(
+          '가족 관리',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 16),
+        const _Card(child: _ConnectParent()),
+        if (profile != null) ...[
+          _Card(child: _Guardians(seniorProfileId: profile.id)),
+          _Card(
+            child: _CodeCard(
+              key: GuardianFamilyKeys.familyInvite,
+              title: '가족 초대하기',
+              // Free per the PRD; the uploaded design had put this behind
+              // 안심 케어.
+              detail: '형제자매도 함께 돌볼 수 있어요. 무료입니다.',
+              action: '초대 번호 만들기',
+              issue: (c) => c.createFamilyInvite(profile.id),
+              hint: '초대받은 분이 앱에서 이 번호를 넣으면 함께 돌볼 수 있어요. 7일 동안 쓸 수 있어요.',
+            ),
+          ),
+          _Card(
+            child: _CodeCard(
+              key: GuardianFamilyKeys.recovery,
+              title: '부모님 폰 다시 연결하기',
+              detail: '폰을 바꾸셨거나 앱을 지웠다 다시 까셨을 때 쓰세요. '
+                  '홈 화면과 설정이 그대로 돌아옵니다.',
+              action: '연결 번호 만들기',
+              issue: (c) => c.createRecoveryCode(profile.id),
+              hint: '부모님 폰의 가족 연결 화면에 이 번호를 넣어 주세요. 24시간 동안 쓸 수 있어요.',
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// The two paths from `07_PHASE_PLAN`, side by side.
+class _ConnectParent extends ConsumerStatefulWidget {
+  const _ConnectParent();
+
+  @override
+  ConsumerState<_ConnectParent> createState() => _ConnectParentState();
+}
+
+class _ConnectParentState extends ConsumerState<_ConnectParent> {
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
+  final _code = TextEditingController();
+  bool _byCode = false;
+  bool _busy = false;
+  String? _error;
+  PairLink? _issued;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = '부모님을 부를 이름을 넣어 주세요.');
+      return;
+    }
+    if (_byCode && _code.text.trim().length < 4) {
+      setState(() => _error = '부모님 폰에 나온 4자리 번호를 넣어 주세요.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final controller = ref.read(guardianPairingControllerProvider.notifier);
+      if (_byCode) {
+        await controller.claimCode(
+          code: _code.text,
+          displayName: name,
+          phoneNumber: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+        );
+        if (mounted) setState(() => _issued = null);
+      } else {
+        final link = await controller.inviteSenior(
+          displayName: name,
+          phoneNumber: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+        );
+        if (mounted) setState(() => _issued = link);
+      }
+    } on SeniorLinkException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } on Object {
+      if (mounted) setState(() => _error = '연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final issued = _issued;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '부모님 연결하기',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 10),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(
+              value: false,
+              label: Text('설치 문자 보내기'),
+              icon: Icon(Icons.sms_outlined, size: 18),
+            ),
+            ButtonSegment(
+              value: true,
+              label: Text('번호 입력하기'),
+              icon: Icon(Icons.dialpad, size: 18),
+            ),
+          ],
+          selected: {_byCode},
+          onSelectionChanged: (s) => setState(() {
+            _byCode = s.first;
+            _error = null;
+            _issued = null;
+          }),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          _byCode
+              ? '부모님 폰의 가족 연결 화면에 나온 4자리 번호를 넣어 주세요. '
+                    '번호로는 전화번호를 알 수 없어서, 이름과 번호는 여기서 받습니다.'
+              : '설치 링크가 담긴 문자를 문자 앱에 채워 드립니다. '
+                    '보내기는 직접 눌러 주세요.',
+          style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF6B6459)),
+        ),
+        const SizedBox(height: 14),
+        if (_byCode) ...[
+          TextField(
+            key: GuardianFamilyKeys.codeField,
+            controller: _code,
+            enabled: !_busy,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(4),
+            ],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 26,
+              letterSpacing: 8,
+              fontWeight: FontWeight.w700,
+            ),
+            decoration: const InputDecoration(
+              labelText: '부모님 폰에 나온 번호',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        TextField(
+          key: GuardianFamilyKeys.nameField,
+          controller: _name,
+          enabled: !_busy,
+          decoration: const InputDecoration(
+            labelText: '부모님 이름',
+            // The contact's own name is the parent's; what goes on the senior's
+            // home screen is the name they will recognise.
+            hintText: '어머니',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          key: GuardianFamilyKeys.phoneField,
+          controller: _phone,
+          enabled: !_busy,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: '부모님 전화번호',
+            helperText: '비워 두셔도 됩니다',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        if (_error case final message?) ...[
+          const SizedBox(height: 10),
+          Text(
+            message,
+            key: GuardianFamilyKeys.message,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 14),
+        FilledButton(
+          key: _byCode ? GuardianFamilyKeys.enterCode : GuardianFamilyKeys.invite,
+          onPressed: _busy ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.guardianPrimary,
+            minimumSize: const Size.fromHeight(48),
+          ),
+          child: Text(
+            _busy ? '준비하는 중이에요' : (_byCode ? '연결하기' : '문자 앱 열기'),
+          ),
+        ),
+        if (issued != null) ...[
+          const SizedBox(height: 16),
+          // Never "문자를 보냈어요": the app hands the message to the messaging
+          // app and cannot see what happens after that.
+          const Text(
+            '문자 앱에 내용을 채워 두었어요. 보내기는 직접 눌러 주세요.',
+            style: TextStyle(fontSize: 14, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          _IssuedCode(
+            code: issued.code,
+            hint: '문자가 열리지 않거나 링크로 연결이 안 되면, '
+                '부모님께 이 번호를 불러 주세요.',
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// A card that issues a code on demand and then shows it.
+class _CodeCard extends ConsumerStatefulWidget {
+  const _CodeCard({
+    super.key,
+    required this.title,
+    required this.detail,
+    required this.action,
+    required this.issue,
+    required this.hint,
+  });
+
+  final String title;
+  final String detail;
+  final String action;
+  final Future<PairLink> Function(GuardianPairingController) issue;
+  final String hint;
+
+  @override
+  ConsumerState<_CodeCard> createState() => _CodeCardState();
+}
+
+class _CodeCardState extends ConsumerState<_CodeCard> {
+  PairLink? _link;
+  String? _error;
+  bool _busy = false;
+
+  Future<void> _issue() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final link = await widget.issue(
+        ref.read(guardianPairingControllerProvider.notifier),
+      );
+      if (mounted) setState(() => _link = link);
+    } on SeniorLinkException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } on Object {
+      if (mounted) setState(() => _error = '번호를 만들지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final link = _link;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          widget.detail,
+          style: const TextStyle(fontSize: 14, height: 1.5),
+        ),
+        const SizedBox(height: 12),
+        if (link == null)
+          FilledButton(
+            onPressed: _busy ? null : _issue,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.guardianPrimary,
+            ),
+            child: Text(_busy ? '만드는 중이에요' : widget.action),
+          )
+        else
+          _IssuedCode(code: link.code, hint: widget.hint),
+        if (_error case final message?) ...[
+          const SizedBox(height: 10),
+          Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        ],
+      ],
+    );
+  }
+}
+
+class _IssuedCode extends StatelessWidget {
+  const _IssuedCode({required this.code, required this.hint});
+
+  final String code;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Scales down rather than clipping: six wide-tracked digits overflow a
+        // narrow phone otherwise.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: SelectableText(
+            code,
+            key: GuardianFamilyKeys.issuedCode,
+            style: const TextStyle(
+              fontSize: 34,
+              letterSpacing: 8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(hint, style: const TextStyle(fontSize: 13, height: 1.5)),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () => Clipboard.setData(ClipboardData(text: code)),
+          icon: const Icon(Icons.copy, size: 18),
+          label: const Text('번호 복사하기'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Everyone looking after this parent, and the one action that can change who
+/// speaks for them.
+class _Guardians extends ConsumerWidget {
+  const _Guardians({required this.seniorProfileId});
+
+  final String seniorProfileId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guardians = ref.watch(guardiansForSelectedProvider);
+
+    return Column(
+      key: GuardianFamilyKeys.guardians,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '연결된 가족',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 10),
+        switch (guardians) {
+          AsyncData(:final value) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final guardian in value)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    '${guardian.displayName ?? guardian.email ?? '보호자'}'
+                    '${guardian.isPrimary ? ' · 대표 보호자' : ''}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              if (value.every((g) => !g.isPrimary) || value.length > 1) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  key: GuardianFamilyKeys.requestPrimary,
+                  onPressed: () => _requestPrimary(context, ref),
+                  child: const Text('대표 보호자 맡기'),
+                ),
+                const SizedBox(height: 6),
+                // The approval is the whole mechanism: everyone else in this
+                // list is a guardian, so nothing they agree among themselves
+                // establishes which one the senior wants answering for them.
+                const Text(
+                  '부모님 폰에서 허락하셔야 바뀝니다.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF6B6459)),
+                ),
+              ],
+            ],
+          ),
+          AsyncError() => const Text('가족 목록을 불러오지 못했어요.'),
+          _ => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: LinearProgressIndicator(),
+          ),
+        },
+      ],
+    );
+  }
+
+  Future<void> _requestPrimary(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref
+          .read(guardianPairingControllerProvider.notifier)
+          .requestPrimary(seniorProfileId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('부모님 폰에 허락을 요청했어요.')),
+        );
+    } on SeniorLinkException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.guardianSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.guardianBorder),
+      ),
+      child: child,
+    );
+  }
+}
