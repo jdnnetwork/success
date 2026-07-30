@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 209 tests, all passing
+flutter test             # currently 240 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -69,8 +69,16 @@ than all at once.
   live project and verified by `tool/verify_supabase_phase5.py`. The Phase 4
   `customer_code` path is superseded; the code direction is now the plan's —
   the parent's phone **shows** a 4-digit code and the guardian types it.
-- **Phase 6 (paid features)** — next, and the only phase left. 안심 케어 and the
-  기기 상태 card on the dashboard are labelled 준비 중 until it lands.
+- **Phase 6 (paid features)** — done as far as it can be here. The subscription
+  model, the consent flow, the refund-on-refusal state and the family-plan gate
+  are applied to the live project and verified by
+  `tool/verify_supabase_phase6.py`. The four capabilities themselves are
+  **interfaces only**, which is what the phase plan asks for — see
+  `## The paid features are interfaces` below.
+
+All six numbered phases are now done. What is left is not a phase: a real
+`applicationId`, an upload key, Play Billing, the native side of the four
+watchers, 더 보기, the 메시지 탭, and a run on a real phone.
 
 Route `/` is a launch gate, not a screen: a senior with a saved screen mode
 lands on their home instead of the splash, because this app becomes the phone's
@@ -197,6 +205,41 @@ they now open a sheet saying the provider is being prepared and offer the email
 route at `/guardian-login`. With no project attached they open the dashboard as
 they did in Phase 3. Email sign-up needs confirmation (`mailer_autoconfirm` is
 false), so signing up returns no session and the screen says to check the inbox.
+
+## The paid features are interfaces
+
+`lib/features/care/data/care_interfaces.dart` declares four capabilities and
+implements none of them. That is deliberate and it is what `07_PHASE_PLAN` asks
+for — it lists a *location interface*, an *unknown-contact call alert
+interface*, an *app install alert interface* and a *5-minute background sync
+interface*, not the implementations. Each needs a system permission whose Play
+policy has to be cleared first, and the only implementations today are
+`Unimplemented…` classes that return nothing rather than plausible numbers, so a
+screen wired to one has to render its empty state.
+
+Three rules run through all of it, and none is a detail:
+
+- **Paying does not turn 안심 케어 on.** `06_PERMISSION_AND_POLICY` puts the
+  senior's agreement *after* the payment, so `pending_senior_consent` is a real
+  state the guardian's screen explains rather than hides. `care_is_active`
+  requires both halves and the consent half decides: a paid subscription with no
+  consent must behave exactly like no subscription.
+- **A refusal refunds, and is final.** It writes an alert telling the guardian
+  the money came back and that the free features still work. It does not retry
+  or nag, and it must not disable anything the senior was already using.
+- **Location is 5분 주기 위치 확인, never tracking.** The class is called
+  `PeriodicLocationCheck` for that reason: how the feature is described is what
+  the senior consents to, so a `LiveLocationTracker` would make the consent
+  screen a misrepresentation. There is a test asserting 실시간 and 추적 appear
+  nowhere on that screen.
+
+**No money moves.** Play Billing is native, needs a store listing, and cannot be
+built or verified here. `start_care_subscription` is the seam where a verified
+purchase token will be checked; everything downstream of it is real.
+
+The family plan gates a *second parent* (`assert_can_add_senior`), which is not
+the same thing as inviting a sibling to help with one parent — that stays free,
+per the PRD, and both screens say so.
 
 ## The launcher half is native, and unverified here
 

@@ -7,6 +7,7 @@ import '../../../domain/senior_profile.dart';
 import '../../../domain/senior_settings.dart';
 import '../application/guardian_home_apps_controller.dart';
 import '../application/guardian_session_controller.dart';
+import '../../care/presentation/guardian_care_tab.dart';
 import 'guardian_family_tab.dart';
 import 'guardian_launcher_tab.dart';
 
@@ -46,7 +47,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
           children: const [
             _HomeTab(),
             GuardianLauncherTab(),
-            _CareTab(),
+            GuardianCareTab(),
             GuardianFamilyTab(),
           ],
         ),
@@ -356,68 +357,3 @@ class _Setting extends StatelessWidget {
   }
 }
 
-class _CareTab extends StatelessWidget {
-  const _CareTab();
-
-  /// Wording follows `06_PERMISSION_AND_POLICY`: location is a periodic check
-  /// rather than tracking, and the call alert is about numbers absent from the
-  /// contact list, not about anything heard during the call.
-  static const _features = <(String, String)>[
-    ('위치 확인', '5분 주기로 어디 계신지 확인합니다'),
-    ('모르는 번호 통화 알림', '연락처에 없는 번호와 통화하면 알려드립니다'),
-    ('폰 미사용 알림', '12시간 동안 사용이 없으면 알림'),
-    ('배터리 부족 알림', '20% 아래로 떨어지면 알림'),
-    ('긴급 소리 보내기', '무음이어도 녹음한 목소리를 재생합니다'),
-    ('가족 메시지 무제한', '무료 플랜의 월 50회 제한이 없어집니다'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return _TabScaffold(
-      title: '안심 케어',
-      children: [
-        const _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '월 5,900원',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              ),
-              SizedBox(height: 6),
-              Text(
-                '언제든 해지할 수 있습니다. 어머니가 동의하셔야 켜집니다.',
-                style: TextStyle(fontSize: 14, height: 1.5),
-              ),
-            ],
-          ),
-        ),
-        for (final (title, detail) in _features)
-          _Card(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.lock_outline, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(detail, style: const TextStyle(fontSize: 14, height: 1.5)),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// 가족 — the docs' 설정 탭: connection, invites, parent info.

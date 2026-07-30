@@ -8,6 +8,7 @@ import '../../../domain/launcher_app.dart';
 import '../application/senior_settings_controller.dart';
 import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
+import '../../care/presentation/care_consent_prompt.dart';
 import '../../family/presentation/primary_guardian_prompt.dart';
 import 'widgets/default_home_prompt.dart';
 import 'widgets/sos_button.dart';
@@ -48,6 +49,7 @@ class EasyHomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: Column(
             children: [
+              const CareConsentPrompt(),
               const PrimaryGuardianPrompt(),
               const DefaultHomePrompt(),
               // Two per row, laid out from the saved list so the grid shrinks

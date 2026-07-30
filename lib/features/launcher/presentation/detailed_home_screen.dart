@@ -8,6 +8,7 @@ import '../../../domain/launcher_app.dart';
 import '../application/senior_settings_controller.dart';
 import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
+import '../../care/presentation/care_consent_prompt.dart';
 import '../../family/presentation/primary_guardian_prompt.dart';
 import 'widgets/default_home_prompt.dart';
 
@@ -93,6 +94,7 @@ class _HomeGrid extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          const CareConsentPrompt(),
           const PrimaryGuardianPrompt(),
           const DefaultHomePrompt(),
           GridView.count(

@@ -5,6 +5,7 @@ import '../../data/remote/guardian_auth_repository.dart';
 import '../../data/remote/home_apps_repository.dart';
 import '../../data/remote/pairing_repository.dart';
 import '../../data/remote/senior_link_repository.dart';
+import '../../data/remote/subscription_repository.dart';
 import 'supabase_config.dart';
 
 /// The build's Supabase settings. Overridden in tests that need to pretend a
@@ -52,6 +53,17 @@ final pairingRepositoryProvider = Provider<PairingRepository>((ref) {
     return InMemoryPairingRepository(links as InMemorySeniorLinkRepository);
   }
   return SupabasePairingRepository(client);
+});
+
+/// Shares the link repository's state for the same reason the pairing twin
+/// does: consent is recorded on the profile the rest of the app reads.
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  if (client == null) {
+    final links = ref.watch(seniorLinkRepositoryProvider);
+    return InMemorySubscriptionRepository(links as InMemorySeniorLinkRepository);
+  }
+  return SupabaseSubscriptionRepository(client);
 });
 
 final homeAppsRepositoryProvider = Provider<HomeAppsRepository>((ref) {

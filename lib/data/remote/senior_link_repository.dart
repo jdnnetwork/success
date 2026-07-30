@@ -264,6 +264,23 @@ class InMemorySeniorLinkRepository implements SeniorLinkRepository {
     return profile;
   }
 
+  /// Records the senior's answer to 안심 케어, the way `resolve_care_consent`
+  /// does. Kept on the store rather than the subscription twin because the
+  /// profile is where the app reads it from.
+  void setConsent(String profileId, PaidConsentStatus status) {
+    final profile = profiles[profileId];
+    if (profile == null) return;
+    profiles[profileId] = SeniorProfile(
+      id: profile.id,
+      displayName: profile.displayName,
+      customerCode: profile.customerCode,
+      ageBand: profile.ageBand,
+      screenMode: profile.screenMode,
+      fontSize: profile.fontSize,
+      paidConsentStatus: status,
+    );
+  }
+
   void rename(String profileId, String displayName) {
     final profile = profiles[profileId];
     if (profile == null) return;

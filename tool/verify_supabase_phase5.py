@@ -165,7 +165,9 @@ try:
           st == 200 and claimed["id"] == invite["senior_profile_id"], claimed)
 
     # The referrer does not survive every install; the code is the fallback.
-    st, invite2 = call("/rest/v1/rpc/create_senior_invite", token=g2,
+    # A fresh guardian, because a second parent for g2 would now need the
+    # family plan — Phase 6 put that gate on create_senior_invite.
+    st, invite2 = call("/rest/v1/rpc/create_senior_invite", token=guardian("g2b"),
                        body={"p_display_name": "작은아버지"})
     remember({"id": invite2["senior_profile_id"]})
     phone3, install3 = device()
