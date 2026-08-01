@@ -16,7 +16,12 @@ import 'package:app/data/senior_link_store.dart';
 import 'package:app/data/senior_settings_repository.dart';
 import 'package:app/domain/launcher_app.dart';
 import 'package:app/domain/senior_settings.dart';
+import 'package:app/domain/guardian_account.dart';
+import 'package:app/data/remote/message_repository.dart';
+import 'package:app/data/remote/pairing_repository.dart';
+import 'package:app/data/remote/subscription_repository.dart';
 import 'package:app/features/family/presentation/family_link_screen.dart';
+import 'package:app/features/messages/presentation/conversation_view.dart';
 import 'package:app/features/launcher/data/app_launcher.dart';
 import 'package:app/features/launcher/presentation/widgets/default_home_prompt.dart';
 import 'package:app/features/guardian/presentation/guardian_login_screen.dart';
@@ -264,5 +269,49 @@ void main() {
       expect(tester.takeException(), isNull);
       await _capture(tester, name);
     }
+  });
+
+  testWidgets('가족 메시지 renders for the guardian', (tester) async {
+    final store = InMemorySeniorLinkRepository();
+    final pairing = InMemoryPairingRepository(store);
+    final subs = InMemorySubscriptionRepository(store);
+    final messages = InMemoryMessageRepository(store, subscriptions: subs);
+    await store.ensureGuardianAccount(displayName: '김보호');
+    final started = await pairing.startSeniorPairing(installId: 'senior-phone');
+    final profile = await pairing.claimSeniorPairingCode(
+      code: started.code,
+      displayName: '어머니',
+    );
+    await messages.send(profile.id, body: '엄마, 점심 드셨어요?');
+    messages.sendingAsSenior = true;
+    await messages.send(profile.id, body: '방금 먹었다. 너는?');
+    messages.sendingAsSenior = false;
+    await messages.send(profile.id, body: '저도 먹었어요. 오늘 안 추우세요?');
+
+    final shared = [
+      seniorLinkRepositoryProvider.overrideWithValue(store),
+      pairingRepositoryProvider.overrideWithValue(pairing),
+      subscriptionRepositoryProvider.overrideWithValue(subs),
+      messageRepositoryProvider.overrideWithValue(messages),
+    ];
+
+    final auth = InMemoryGuardianAuthRepository()
+      ..seedSignedIn(const GuardianSession(userId: 'u1'));
+    addTearDown(auth.dispose);
+    await pumpApp(
+      tester,
+      overrides: [
+        ...shared,
+        guardianAuthRepositoryProvider.overrideWithValue(auth),
+      ],
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('메시지'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ConversationKeys.field), findsOneWidget);
+    await _capture(tester, '15-guardian-messages');
+
+    // The senior's end is covered by test/features/messages; capturing it here
+    // needs a second pumpApp in the same test and that does not settle.
   });
 }
