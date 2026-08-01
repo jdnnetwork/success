@@ -4,9 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/supabase/supabase_config.dart';
+import 'core/theme/font_license.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicense();
 
   // A build with no --dart-define keys still runs: every repository falls back
   // to its in-memory twin. Phases 0–3 were built without a backend and are

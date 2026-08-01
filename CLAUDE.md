@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 256 tests, all passing
+flutter test             # currently 266 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -133,9 +133,50 @@ Raising the text size is the point of this app, so anything that only fits at
 the default size is a bug. The app tile, the SOS pill and the pairing-code row
 all scale down to fit rather than overflow — check new screens at 아주 크게.
 
+정말 쉬운 화면's grid sizes its rows from the space actually left rather than
+leaving the tiles square. It does not scroll, and a `GridView` is a scrollable:
+asked for more height than it has, it clips the bottom row in silence instead
+of painting an overflow stripe. `easy_home_fits_test.dart` measures every tile
+against the grid at all three text sizes, because nothing throws when this
+breaks.
+
 `flutter test test/screenshots_test.dart` writes each screen to
 `build/screenshots/`. There is no display here and no way to build an APK
 (see below), so those PNGs are how layout gets reviewed.
+
+**Pumping the app twice in one test needs `pumpApp`, not `pumpWidget`.** A
+second `App` pumped straight over the first only *updates* the existing
+elements, so the ProviderScope keeps its container and the router keeps its
+stack — new overrides and new prefs are read by nobody and the test quietly
+re-examines the first app. `pumpApp` tears the old tree down first. Until it
+did, every 아주 크게 screenshot was byte-identical to its normal-size twin, and
+the clipped grid above had been sitting in plain sight for weeks.
+
+## The font is bundled
+
+`assets/fonts/NotoSansKR-{Regular,Bold}.ttf`, declared in `pubspec.yaml` and
+set as `AppTheme.fontFamily` on both personas. Undeclared, Flutter draws Korean
+in whatever face the handset ships — 삼성One on a Galaxy, Roboto elsewhere — so
+the app looked different on every phone and matched the design on none of them.
+
+Three things about it:
+
+- **Static faces, not the upstream variable font.** Flutter picks between
+  *files* by weight and never moves a variable font's `wght` axis on its own;
+  that only happens through `TextStyle.fontVariations`. One variable asset
+  would draw every 700/800/900 label at the axis default, which is Thin.
+- **Only 400 and 700 are bundled**, so w500/w600 round to Regular and w800/w900
+  to Bold. A third face is 2.7 MB for a difference nobody reads at a glance.
+- **They are subset.** Hanja is dropped, which is what takes each face from
+  10 MB to 2.7. Anything outside the subset still draws through Flutter's
+  fallback to the system font. `tool/build_fonts.py` regenerates both and
+  documents the ranges; the OFL text is bundled and registered with
+  `LicenseRegistry` because redistributing the font requires it.
+
+`screenshots_test.dart` loads these same faces out of the asset bundle — test
+environments register no bundled fonts — and deliberately registers nothing
+under the fallback family, so a label the theme failed to reach shows up in the
+PNG as tofu rather than being papered over.
 
 ## Supabase
 
@@ -349,10 +390,9 @@ Two things about it:
   is not a store build — a real upload key, and an `applicationId` that is not
   `com.example.app`, are both still to do.
 
-The `check` job fetches `test/fonts/NotoSansKR.ttf` the same way the
-SessionStart hook does, because the font is gitignored (10 MB) and without it
-`screenshots_test.dart` skips itself — the PNGs would be all tofu. That skip is
-also what a fresh clone gets, rather than eight failures inside `setUpAll`.
+Neither job fetches a font any more. The app's own faces are committed under
+`assets/fonts/`, and `screenshots_test.dart` reads them from the asset bundle,
+so a fresh clone renders the same PNGs CI does.
 
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are optional repository secrets. Unset,
 the APK still builds and runs on the in-memory repositories; sign-in, linking

@@ -40,6 +40,14 @@ Future<void> pumpApp(
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
+  // Tear the previous tree down first. Pumping a second App straight over the
+  // first updates the existing elements instead of replacing them, so the
+  // ProviderScope keeps its container and the router keeps its stack: the new
+  // overrides and the new prefs are read by nobody and the test quietly
+  // re-examines the first app. That is how every 아주 크게 screenshot came out
+  // byte-identical to its normal-size twin.
+  await tester.pumpWidget(const SizedBox.shrink());
+
   await tester.pumpWidget(
     RepaintBoundary(
       key: appRootKey,

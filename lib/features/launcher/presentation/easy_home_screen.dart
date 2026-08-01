@@ -61,19 +61,36 @@ class EasyHomeScreen extends ConsumerWidget {
               const DefaultHomePrompt(),
               // Two per row, laid out from the saved list so the grid shrinks
               // with it instead of indexing past the end.
+              //
+              // The rows are sized from the space actually left rather than
+              // left square. This screen does not scroll, and at 아주 크게 with
+              // the 첫 화면 card showing there is not room for two square
+              // tiles — a square grid quietly clips the bottom row instead of
+              // complaining, so the labels simply vanish. Shorter tiles keep
+              // every button whole; `AppTile` scales its own contents to fit.
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    for (final app in apps)
-                      AppTile(
-                        app: app,
-                        onTap: () => _openApp(context, ref, app),
-                      ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const spacing = 14.0;
+                    final rows = (apps.length / 2).ceil();
+                    final width = (constraints.maxWidth - spacing) / 2;
+                    final height =
+                        (constraints.maxHeight - spacing * (rows - 1)) / rows;
+                    return GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: spacing,
+                      crossAxisSpacing: spacing,
+                      childAspectRatio: height > 0 ? width / height : 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        for (final app in apps)
+                          AppTile(
+                            app: app,
+                            onTap: () => _openApp(context, ref, app),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 14),

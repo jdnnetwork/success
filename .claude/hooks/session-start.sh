@@ -56,15 +56,4 @@ fi
 cd "$PROJECT_DIR"
 flutter pub get
 
-# Review screenshots need a Korean face; the test environment's stub font
-# renders every label as tofu. Kept out of the repository because it is 10MB
-# and only ever used by test/screenshots_test.dart.
-FONT="$PROJECT_DIR/test/fonts/NotoSansKR.ttf"
-if [ ! -s "$FONT" ]; then
-  mkdir -p "$(dirname "$FONT")"
-  curl -fsSL -o "$FONT" \
-    'https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf' \
-    || echo "WARNING: could not fetch the screenshot font; screenshots_test will fail." >&2
-fi
-
 flutter --version

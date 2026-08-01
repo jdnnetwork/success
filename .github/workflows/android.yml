@@ -36,17 +36,6 @@ jobs:
 
       - run: flutter pub get
 
-      # Kept out of the repository because it is 10 MB and only ever used by
-      # test/screenshots_test.dart, which fetches it through the SessionStart
-      # hook in the development environment. CI has no such hook, so without
-      # this every Korean label rasterises as tofu and that test refuses to
-      # write PNGs nobody could review. Same URL the hook uses.
-      - name: Fetch the screenshot font
-        run: |
-          mkdir -p test/fonts
-          curl -fsSL -o test/fonts/NotoSansKR.ttf \
-            'https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf'
-
       - run: flutter analyze
 
       - run: flutter test

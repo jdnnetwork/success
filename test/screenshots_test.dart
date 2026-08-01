@@ -5,10 +5,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart' show FontLoader;
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/core/supabase/supabase_config.dart';
+import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/supabase/supabase_providers.dart';
 import 'package:app/data/remote/guardian_auth_repository.dart';
 import 'package:app/data/remote/senior_link_repository.dart';
@@ -37,9 +38,10 @@ import 'support/pump_app.dart';
 ///
 /// Two things the default test environment does not give us:
 ///
-/// * Its stub font has no Korean glyphs, so every label rasterises as tofu.
-///   `test/fonts/NotoSansKR.ttf` is registered under the family Flutter falls
-///   back to, which is close to what an Android phone actually uses.
+/// * Bundled fonts are not registered — the stub font it uses instead has no
+///   Korean glyphs, so every label would rasterise as tofu. `setUpAll` loads
+///   the app's own faces out of the asset bundle, so the PNGs are drawn in the
+///   face the phone will use rather than an approximation of it.
 /// * `toImage` completes on a real engine callback that the fake clock never
 ///   delivers, so it has to run inside [WidgetTester.runAsync] — awaiting it
 ///   directly hangs the run instead of failing.
@@ -69,42 +71,56 @@ Future<void> _loadImages(WidgetTester tester) async {
   await tester.pump();
 }
 
-/// Fetched by the SessionStart hook and by CI rather than committed — it is
-/// 10 MB and nothing but this file uses it.
-final _korean = File('test/fonts/NotoSansKR.ttf');
+/// The SDK's icon glyphs, wherever this Flutter install keeps them.
+///
+/// `FLUTTER_ROOT` is set when the tests are run by the `flutter` tool; the
+/// walk up from the running executable covers being run some other way.
+File? _materialIcons() {
+  const relative = 'bin/cache/artifacts/material_fonts/'
+      'MaterialIcons-Regular.otf';
+  final roots = <String>[?Platform.environment['FLUTTER_ROOT']];
+  for (var dir = File(Platform.resolvedExecutable).parent;
+      dir.path != dir.parent.path;
+      dir = dir.parent) {
+    roots.add(dir.path);
+  }
+  for (final root in roots) {
+    final file = File('$root/$relative');
+    if (file.existsSync()) return file;
+  }
+  return null;
+}
 
 void main() {
-  // Skipped rather than crashed on a clone that has not fetched it. Without a
-  // Korean face every label rasterises as tofu, so the PNGs would be worthless
-  // — and saying that once beats eight identical failures inside `setUpAll`.
-  if (!_korean.existsSync()) {
-    test('screenshots need a Korean font', () {},
-        skip: 'test/fonts/NotoSansKR.ttf is missing — run '
-            '.claude/hooks/session-start.sh to fetch it.');
-    return;
-  }
-
   setUpAll(() async {
-    Future<void> register(String family, String path) async {
-      final bytes = File(path).readAsBytesSync();
-      final loader = FontLoader(family)
-        ..addFont(
-          Future.value(ByteData.view(Uint8List.fromList(bytes).buffer)),
-        );
-      await loader.load();
+    // The app's own family, both weights, straight out of the asset bundle —
+    // so a label the theme failed to reach shows up here as tofu instead of
+    // being quietly papered over by a fallback registration.
+    final korean = FontLoader(AppTheme.fontFamily);
+    for (final asset in const [
+      'assets/fonts/NotoSansKR-Regular.ttf',
+      'assets/fonts/NotoSansKR-Bold.ttf',
+    ]) {
+      korean.addFont(rootBundle.load(asset));
     }
+    await korean.load();
 
-    for (final family in ['Roboto', 'Noto Sans KR']) {
-      await register(family, _korean.path);
-    }
     // Icons are tofu without this; the glyphs ship with the SDK rather than
     // the project, so the path is resolved from the running Flutter install.
-    final icons = File(
-      '${File(Platform.resolvedExecutable).parent.parent.parent.path}'
-      '/artifacts/material_fonts/MaterialIcons-Regular.otf',
-    );
-    if (icons.existsSync()) {
-      await register('MaterialIcons', icons.path);
+    //
+    // Searched for rather than computed: the executable running this is
+    // `flutter_tester`, which sits three directories deeper in the cache than
+    // `dart` does, and a fixed number of `.parent`s silently misses it — which
+    // is why every icon in these PNGs used to be a square.
+    final icons = _materialIcons();
+    if (icons != null) {
+      final loader = FontLoader('MaterialIcons')
+        ..addFont(
+          Future.value(
+            ByteData.view(Uint8List.fromList(icons.readAsBytesSync()).buffer),
+          ),
+        );
+      await loader.load();
     }
   });
 

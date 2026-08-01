@@ -7,6 +7,15 @@ import 'app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  /// The face the design is drawn in, bundled with the app.
+  ///
+  /// Set on both personas rather than left to the phone: unset, Flutter draws
+  /// Korean in whatever the handset ships — 삼성One here, Roboto there — and an
+  /// app whose whole promise is that it is easy to read should not look
+  /// different on every phone. Only 400 and 700 are bundled, so w500 and w600
+  /// round to Regular and w800/w900 to Bold.
+  static const fontFamily = 'Noto Sans KR';
+
   static ThemeData get senior {
     final scheme =
         ColorScheme.fromSeed(
@@ -18,6 +27,7 @@ class AppTheme {
         );
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.seniorBackground,
       // Larger defaults for senior-facing UI.
@@ -41,6 +51,7 @@ class AppTheme {
         );
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.guardianBackground,
     );

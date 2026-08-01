@@ -44,6 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Korean font used only to render review screenshots; fetched by the
-# SessionStart hook so it does not live in the repository.
+# The upstream Noto Sans KR variable font, which is only the *source*
+# `tool/build_fonts.py` cuts the app's two static faces from. Those faces are
+# committed under assets/fonts/; this 10 MB original is not, because nothing
+# but a regeneration ever reads it. The script says how to fetch it.
 /test/fonts/
