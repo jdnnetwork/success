@@ -5,6 +5,7 @@ import '../../features/family/presentation/family_link_screen.dart';
 import '../../features/guardian/presentation/guardian_login_screen.dart';
 import '../../features/guardian/presentation/guardian_dashboard_screen.dart';
 import '../../features/guardian/presentation/guardian_start_screen.dart';
+import '../../features/messages/presentation/family_message_screen.dart';
 import '../../features/launcher/presentation/detailed_home_screen.dart';
 import '../../features/launcher/presentation/easy_home_screen.dart';
 import '../../features/launcher/presentation/app_settings_screen.dart';
@@ -55,6 +56,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.familyLink,
         builder: (context, state) => const FamilyLinkScreen(),
+      ),
+      GoRoute(
+        path: Routes.familyMessages,
+        builder: (context, state) => const FamilyMessageScreen(),
       ),
       GoRoute(
         path: Routes.moreApps,

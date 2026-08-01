@@ -9,6 +9,7 @@ import '../application/senior_settings_controller.dart';
 import '../data/app_launcher.dart';
 import 'widgets/app_tile.dart';
 import '../../care/presentation/care_consent_prompt.dart';
+import '../../family/application/senior_pairing_controller.dart';
 import '../../family/presentation/primary_guardian_prompt.dart';
 import 'widgets/default_home_prompt.dart';
 import 'widgets/sos_button.dart';
@@ -42,6 +43,12 @@ class EasyHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(seniorSettingsControllerProvider).value?.apps;
     final apps = (saved == null || saved.isEmpty) ? defaultEasyApps : saved;
+    // `04_SCREEN_SPEC` gives this slot as 가족 연결 또는 자녀 이름 버튼: before a
+    // family is attached it is the way to attach one, and afterwards it is the
+    // way to talk to them. A senior who is already connected has no use for a
+    // 가족 연결 button, and every use for a way to answer their child.
+    final connected =
+        (ref.watch(seniorGuardiansProvider).value ?? const []).isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -74,9 +81,13 @@ class EasyHomeScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _PillButton(
-                      label: '가족 연결',
-                      icon: Icons.family_restroom,
-                      onTap: () => context.go(Routes.familyLink),
+                      label: connected ? '가족 메시지' : '가족 연결',
+                      icon: connected
+                          ? Icons.chat_bubble_outline
+                          : Icons.family_restroom,
+                      onTap: () => context.push(
+                        connected ? Routes.familyMessages : Routes.familyLink,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

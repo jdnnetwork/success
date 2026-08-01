@@ -156,7 +156,8 @@ class _SettingsPanel extends StatelessWidget {
     final items = <(String, String?)>[
       ('앱 설정하기', Routes.appSettings),
       ('글씨 크기 조절하기', Routes.fontSize),
-      ('가족 연결 설정', null),
+      ('가족 메시지', Routes.familyMessages),
+      ('가족 연결 설정', Routes.familyLink),
       ('진동/벨소리 전환', null),
       ('잘보이네 사용하지 않기', null),
     ];

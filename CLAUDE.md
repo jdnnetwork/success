@@ -17,7 +17,7 @@ Commands:
 
 ```bash
 flutter analyze          # currently clean
-flutter test             # currently 240 tests, all passing
+flutter test             # currently 256 tests, all passing
 ```
 
 The SDK unpacks as a root-owned git checkout, so `git config --global --add
@@ -74,7 +74,30 @@ than all at once.
   are applied to the live project and verified by
   `tool/verify_supabase_phase6.py`. The four capabilities themselves are
   **interfaces only**, which is what the phase plan asks for — see
-  `## The paid features are interfaces` below.
+  `## 가족 메시지 and its allowance
+
+`supabase/migrations/20260801000000_phase7_messages.sql`. The PRD prices it at
+월 50회 / 이미지 10개 free, unlimited with 안심 케어, and two decisions in the
+counting are load-bearing:
+
+- **The quota counts guardian messages only.** A senior replying to their child
+  is never blocked, whatever the counter says — a launcher for an elderly
+  person that refuses to let them answer their daughter because a monthly
+  allowance ran out is selling the wrong thing, and the allowance exists to
+  price the guardian's use.
+- **The allowance is the family's, not each guardian's.** Two siblings share
+  one, because the parent is the one reading them.
+
+`ConversationView` draws both ends. One widget on purpose: it is the same
+conversation, and two copies would drift. `large` is what differs — the
+senior's is scaled up and hides the counter, because a tally of how many times
+their family may write to them would be unkind and is not about them anyway.
+
+On the senior's home, `04_SCREEN_SPEC`'s 가족 연결 또는 자녀 이름 버튼 is now
+literal: before a family is attached it connects one, and afterwards it opens
+the conversation.
+
+## The paid features are interfaces` below.
 
 All six numbered phases are now done. What is left is not a phase: a real
 `applicationId`, an upload key, Play Billing, the native side of the four
@@ -97,7 +120,12 @@ Restoring any of them means changing the PRD first, not just the screen:
   it is described is what the senior consents to.
 - 여러 보호자 초대 — free in the PRD, paid in the design.
 
-The docs' 메시지 탭 has no design and is not built.
+메시지 탭 is now built. An earlier note here said it had no design — that was
+wrong: `04_SCREEN_SPEC` specifies it (카톡 스타일 대화, 텍스트 전송, 이미지 전송,
+무료 잔여 횟수 표시, 유료 전환 안내) and `02_MVP_SCOPE` puts it in the MVP.
+Everything but **image sending** is there; a picture needs an image picker and
+file storage, neither of which can be built or verified here, so it is absent
+rather than present-and-broken.
 
 ## Layout under large text
 
@@ -205,6 +233,29 @@ they now open a sheet saying the provider is being prepared and offer the email
 route at `/guardian-login`. With no project attached they open the dashboard as
 they did in Phase 3. Email sign-up needs confirmation (`mailer_autoconfirm` is
 false), so signing up returns no session and the screen says to check the inbox.
+
+## 가족 메시지 and its allowance
+
+`supabase/migrations/20260801000000_phase7_messages.sql`. The PRD prices it at
+월 50회 / 이미지 10개 free, unlimited with 안심 케어, and two decisions in the
+counting are load-bearing:
+
+- **The quota counts guardian messages only.** A senior replying to their child
+  is never blocked, whatever the counter says — a launcher for an elderly
+  person that refuses to let them answer their daughter because a monthly
+  allowance ran out is selling the wrong thing, and the allowance exists to
+  price the guardian's use.
+- **The allowance is the family's, not each guardian's.** Two siblings share
+  one, because the parent is the one reading them.
+
+`ConversationView` draws both ends. One widget on purpose: it is the same
+conversation, and two copies would drift. `large` is what differs — the
+senior's is scaled up and hides the counter, because a tally of how many times
+their family may write to them would be unkind and is not about them anyway.
+
+On the senior's home, `04_SCREEN_SPEC`'s 가족 연결 또는 자녀 이름 버튼 is now
+literal: before a family is attached it connects one, and afterwards it opens
+the conversation.
 
 ## The paid features are interfaces
 

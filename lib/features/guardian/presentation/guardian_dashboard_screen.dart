@@ -8,6 +8,7 @@ import '../../../domain/senior_settings.dart';
 import '../application/guardian_home_apps_controller.dart';
 import '../application/guardian_session_controller.dart';
 import '../../care/presentation/guardian_care_tab.dart';
+import '../../messages/presentation/guardian_message_tab.dart';
 import 'guardian_family_tab.dart';
 import 'guardian_launcher_tab.dart';
 
@@ -47,6 +48,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
           children: const [
             _HomeTab(),
             GuardianLauncherTab(),
+            GuardianMessageTab(),
             GuardianCareTab(),
             GuardianFamilyTab(),
           ],
@@ -60,6 +62,10 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
           NavigationDestination(
             icon: Icon(Icons.grid_view_outlined),
             label: '홈 화면',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: '메시지',
           ),
           NavigationDestination(
             icon: Icon(Icons.favorite_outline),

@@ -14,6 +14,7 @@ class Routes {
   static const sos = '/sos';
   static const familyLink = '/family-link';
   static const moreApps = '/more';
+  static const familyMessages = '/messages';
 
   // Senior-facing settings (Phase 2)
   static const appSettings = '/settings/apps';

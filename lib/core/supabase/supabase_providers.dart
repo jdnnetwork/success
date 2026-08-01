@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../data/remote/guardian_auth_repository.dart';
 import '../../data/remote/home_apps_repository.dart';
+import '../../data/remote/message_repository.dart';
 import '../../data/remote/pairing_repository.dart';
 import '../../data/remote/senior_link_repository.dart';
 import '../../data/remote/subscription_repository.dart';
@@ -64,6 +65,19 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
     return InMemorySubscriptionRepository(links as InMemorySeniorLinkRepository);
   }
   return SupabaseSubscriptionRepository(client);
+});
+
+final messageRepositoryProvider = Provider<MessageRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  if (client == null) {
+    return InMemoryMessageRepository(
+      ref.watch(seniorLinkRepositoryProvider) as InMemorySeniorLinkRepository,
+      subscriptions:
+          ref.watch(subscriptionRepositoryProvider)
+              as InMemorySubscriptionRepository,
+    );
+  }
+  return SupabaseMessageRepository(client);
 });
 
 final homeAppsRepositoryProvider = Provider<HomeAppsRepository>((ref) {
